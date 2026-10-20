@@ -1,0 +1,23 @@
+---
+title: Research notes
+description: The research behind PACE, the Portable Account Core for Ethereum, checked against each standard’s latest text on 21 September 2026, with sources.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+import { Card, Cards } from 'vocs'
+
+# Research notes [What each standard says today, checked against its latest text on 21 September 2026.]
+
+These notes are the research behind the copy on this site. Every claim in the docs traces to one of them. Anything that could not be confirmed from a primary source is marked UNVERIFIED in the note, and the sources are listed at the end of each.
+
+<Cards>
+  <Card title="EIP-8130 and EIP-8141" description="Keystore Accounts and Frame Transactions: the two account models, their status, how one maps onto the other, and where the mapping breaks." icon="database" to="/research/8130-8141" />
+  <Card title="ERC-7715 and ERC-7710" description="The permission request RPC and its on-chain redemption, the January 2026 rewrite, MetaMask’s deployment, and the Keystore mapping." icon="list-checks" to="/research/7710-7715" />
+  <Card title="ERC-8211, ERC-7730, ERC-7964" description="Smart batches, clear-signing descriptors and cross-chain signatures: exact structures, production status, and the display gaps." icon="layers" to="/research/8211-7730-7964" />
+  <Card title="EIP-7906 and co-signers" description="Transaction assertions via the state-diff opcodes, and what Safenet, Blockaid and Hypernative actually do today." icon="shield-check" to="/research/7906-cosigners" />
+  <Card title="Privacy" description="CROPS, Kohaku, Privacy Pools, stealth addresses and FHE: what a private account has to be able to do." icon="eye-off" to="/research/privacy" />
+  <Card title="Where 8130 and 8141 disagree" description="Where EIP-8130 and EIP-8141 differ, what we decided, what we ask EIP-8130 for, and what is still open." icon="git-compare" to="/research/the-split" />
+  <Card title="ERC-8403 and the Keystore read" description="A draft ERC for key changes across both designs, and why we prefer a plain Keystore read in the mempool." icon="key-round" to="/research/erc-8403" />
+  <Card title="Post-quantum" description="SLH-DSA, ML-DSA and Falcon, the EF’s SPHINCS- and leanSPHINCS work, precompile EIPs, aggregation, and the EOA migration path." icon="refresh-cw" to="/research/post-quantum" />
+</Cards>

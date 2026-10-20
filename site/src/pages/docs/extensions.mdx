@@ -1,0 +1,91 @@
+---
+title: What a wallet can add
+description: Features a wallet can build on top of PACE. Other wallets still see them, but none has to support them.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+import { Shot } from '../../components/Shot'
+
+# What a wallet can add [Features a wallet can build on top of PACE. Other wallets still see them, but none has to support them.]
+
+Nothing on this page is part of PACE. A wallet builds these on top of the shared account, and each one sits on ordinary Keystore rows, so another wallet can still see it and remove it even when it can’t use it. Ethlabs may publish reference versions. The wallet in the interactive mockup adds all of them.
+
+## Spending limits
+
+A key can carry a dollar cap per day, week and month, and nothing in the wallet can get around it. The key is a policy row: every call it makes has to go to a spend-limit manager, and the Keystore stores a hash of the limits.
+
+```solidity [SpendLimit]
+struct SpendLimit {
+    uint256 perDay;     // in USD with 6 decimals, 0 = no cap
+    uint256 perWeek;
+    uint256 perMonth;
+    address priceFeed;  // oracle used to price each transfer
+}
+policy_commitment = keccak256(abi.encode(SpendLimit));
+```
+
+The manager checks the limits against that hash, prices every outgoing transfer with the price feed, adds it to what the key spent this day, week and month, and reverts if any cap would be passed. A limited key can’t be an admin key, so it can’t remove its own limit. In the mockup the user picks the price source: Chainlink feeds, which stop a token from being spent once its feed is an hour stale, or Uniswap prices averaged over 30 minutes.
+
+<Shot id="spend-limit" kind="phone" caption="Adding a passkey with a spending limit. The cap is a policy row that only a pricing manager can use." />
+
+Still open: how the manager finds transfers inside arbitrary calls such as a swap, and whether a daily cap resets on a rolling basis or at midnight.
+
+## Smart batches and cross-chain
+
+### Smart batches
+
+A plain batch, which is in PACE, fixes every argument when it is signed. Real flows often can’t, because the amount to deposit is whatever the swap returned. ERC-8211 lets a step fetch a value when it runs and revert unless the value is within bounds: equal to, at least, at most or between. A step with no target is a predicate, which only checks a condition, so the wallet can add its own rule, in the user’s words, as the last step. There are no loops or branches, so wallets and explorers can render every step.
+
+Today ERC-8211 runs as a module inside the account. We would like EIP-8130 and EIP-8141 to support smart batches natively, as long as a later call can still use an earlier call’s output and read storage it changed. Apps hand a smart batch to the wallet as an ERC-5792 capability.
+
+### Cross-chain
+
+ERC-7964 lets one signature cover several chains. It takes the chain id out of the signing domain and lists one operation per chain, so the wallet can show every chain’s part and each chain checks only its own. A two-chain deposit is a batch on Base and a batch on Arbitrum that opens with a predicate waiting for the bridged money to arrive. Nothing runs the chains together, so each part carries its own nonce and deadline.
+
+<Shot id="xchain-sheet" kind="phone" caption="A two-chain deposit. The user signs once. The Base part runs now and the Arbitrum part runs when the money arrives." />
+
+We would like every canonical authenticator to understand this format, so any account can accept a multichain signature without extra code. That needs no fork.
+
+## Private balance
+
+A user can hold ETH in a shielded pool and pay without the payment pointing back at their main account. The mockup uses Privacy Pools’ ETH pool on Ethereum. Moving ETH in is an ordinary, public transaction from the main account, and the pool screens each deposit before it can leave privately.
+
+| | Anyone can see it |
+| --- | --- |
+| A deposit from the main account into the pool | Yes |
+| Every amount, and the address a payment goes to | Yes |
+| Which payments out of the pool came from you | No |
+| Which payments to your private address were to you | No |
+
+<Shot id="private-tab" kind="phone" caption="The Private tab, with Send, Receive and Add, the balance and what others can see." />
+
+### Private sends
+
+Every private send comes from a new account with a key used for that send only, derived from the recovery phrase, so nothing on chain ties it to the main account. In one EIP-8141 transaction a frame checks the withdrawal proof, a paymaster pays the fee and is repaid from the withdrawal, and the payment runs. EIP-8130 can’t do this, because its payer has to sign the transaction by name.
+
+:::warning[What guards a private send]
+The one-time account has a single key, and Face ID is the only factor. The co-signer and the spending limit can’t take part, because they would link the two accounts. The wallet says so on every private sheet.
+:::
+
+<Shot id="private-send" kind="phone" caption="A private send to someone with a private address. A one-time key signs it with Face ID." />
+
+### Private receiving
+
+A user publishes a private address, using ERC-5564 stealth addresses and the ERC-6538 registry. Each payer turns it into a new address that only the recipient can find and spend from. The recipient’s wallet scans the payment announcements with a viewing key, and a payment it finds can move into the pool and pay its own fee.
+
+<Shot id="private-receive" kind="phone" caption="The private address and a payment found for you, ready to move into the pool." />
+
+The [privacy research notes](/research/privacy) cover Privacy Pools, Kohaku and the rest of the field.
+
+## Keys from a recovery phrase
+
+A wallet can rebuild its keys from a recovery phrase on a new device. The phrase never goes on chain. A key derived from it is an ordinary row, so a restored wallet derives the key again and finds the account by looking the key up in the Keystore. The mockup uses a 12-word phrase and these paths, which no standard fixes:
+
+```text [derivation paths in the mockup]
+m/44'/60'/8130'/0'/0    secp256k1
+m/44'/60'/8130'/1'/0    P-256
+m/44'/60'/8130'/2'/0    post-quantum
+```
+
+A key from a second phrase is just another row, and nothing on chain links the phrases. A recovery-only key, one that can get the user back in but can’t spend, doesn’t exist in EIP-8130 yet. The mockup’s 48-hour recovery is a design idea with no mechanism behind it.

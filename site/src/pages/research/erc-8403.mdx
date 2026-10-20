@@ -1,0 +1,108 @@
+---
+title: ERC-8403 and the Keystore read
+description: A draft ERC that defines key changes across both account designs, why we prefer a plain Keystore read in the mempool, and what is still open.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+# ERC-8403 and the Keystore read [A draft ERC that defines key changes across both account designs, why we prefer a plain Keystore read, and what is still open.]
+
+:::note[Where we stand]
+Our current preference is to let the public mempool read the Keystore during validation, and not to adopt ERC-8403's Merkle form. [ethereum/EIPs#12340](https://github.com/ethereum/EIPs/pull/12340) already proposes that read for EIP-8141 as an optional chain parameter. It is the mempool exemption we ask for under [reading the Keystore](/research/the-split#reading-the-keystore). We keep ERC-8403's Tier 2 as a fallback shape in case L1 leaves the parameter off. Everything on this page was checked against each spec's text on 23 September 2026.
+:::
+
+## What it is
+
+ERC-8403, Account Authority Lifecycle, is a draft by Daniil Ankushin, created on 29 August 2026 and still an open PR at [ethereum/ERCs#1979](https://github.com/ethereum/ERCs/pull/1979). It defines what adding, rotating and revoking a key means in a way that fits both EIP-8141 and EIP-8130. It adds no opcode, no transaction type and no consensus rule. Account code and wallets follow it by choice.
+
+It starts from the rule that makes a validation check safe for the public mempool. A node holds a transaction for a while before it lands. If someone else can make that transaction invalid in the meantime, an attacker can make every node re-check thousands of transactions for free. So everything a check reads has to be either a root the node already trusts or storage that only the account itself can write.
+
+## How it works
+
+1. Each authority is a leaf, `keccak256(authority_id || predicate)`. The `authority_id` is a fixed 32-byte name for a key slot. The `predicate` says what the slot allows: a key, a threshold, a spend cap or an expiry.
+2. The leaves form a Merkle tree and the account commits to its root.
+3. A transaction carries the acting `authority_id`, the root it proves against, the Merkle proof and a signature.
+4. The account's validation step checks the proof, which shows the key belongs to the account, and the signature, which shows the key approved this transaction. If either fails, the transaction is invalid.
+5. Adding, rotating and revoking a key each publish a new root.
+
+## Tier 1 and Tier 2
+
+The account keeps its root either in a shared contract (Tier 1) or in its own storage (Tier 2). That choice decides how fast a revoke takes effect.
+
+| | Tier 1 | Tier 2 |
+|---|---|---|
+| **Where the root lives** | the shared EIP-8272 recent-roots contract | the account's own storage |
+| **What validation reads** | nothing that can change | one slot the account owns |
+| **How long a revoked key keeps working** | up to 8,191 slots, about 27 hours at 12-second slots | until the next block |
+| **What it needs** | EIP-8272 | EIP-8141 only |
+
+Adding a key is safe on Tier 1, because an old root cannot grant anything the new root does not. Revoking is not safe there. A rotation is an add plus a revoke, so replacing a stolen key needs Tier 2.
+
+## How it maps onto each design
+
+**EIP-8141.** The account's VERIFY frame does the check. It reads the proof from frame data, gets the signer from the protocol-checked signature with `SIGPARAM`, rebuilds the leaf, checks it against the root and calls `APPROVE`. The author's [proof of concept](https://github.com/AnkushinDaniil/erc-8403-poc) runs Tier 2 this way on a solo Nethermind devnet, with a 97-byte verifier that uses 2,383 gas against the 100,000 cap.
+
+**EIP-8130.** It already meets the rule without changes. The node reads the key's `actor_config` slot directly, and only a change signed by the account's admin key can write that slot. ERC-8403 counts that read as a proof of length zero. There is no root and no tree. To move key changes across chains, 8130 replays the same signed batch on each chain in counter order.
+
+## Why we prefer the Keystore read
+
+With the exemption, an EIP-8141 account's VERIFY frame reads the same `actor_config` slot that EIP-8130 reads. The transaction then only needs a key id and a signature, and both transports run the same check against one record. In ERC-8403's terms that is the Read form on both chains, and the Merkle part is not used.
+
+| | Keystore read | ERC-8403 Merkle form |
+|---|---|---|
+| **Protocol change needed** | the exemption in #12340, optional per chain | none for Tier 2, EIP-8272 for Tier 1 |
+| **What the transaction carries** | a key id and a signature | also a root reference and a proof |
+| **What the wallet has to cache** | nothing | the account's full key set |
+| **When a revoke takes effect** | next block | next block on Tier 2, up to about 27 hours on Tier 1 |
+| **What a key change costs** | one Keystore write, read on Base and on L1 | a Keystore write, plus a root update on L1 |
+
+The Merkle form's only advantage at validation time is Tier 1, which reads nothing that can change. It pays for that with up to a day of revocation delay, and that is a bad trade for a wallet.
+
+The exemption still leans on ERC-8403. Its case for why a Keystore read is safe is ERC-8403's rule: every slot the check reads is keyed to the account, and only the account's admin signature can change it. #12340 makes the same argument in its own text.
+
+## Where ERC-8403 still helps
+
+- **A fallback if L1 leaves the parameter off.** #12340's default is an empty list, and without it an EIP-8141 account can only read its own storage. Tier 2 is a standard shape for that case. Our [mirroring fallback](/research/the-split#reading-the-keystore) works under the same rule and is simpler to build.
+- **Readers that cannot see the Keystore.** A ZK verifier, a privacy protocol or a chain that does not replay key changes can check a proof against a root. None of them can read a storage slot on another chain.
+- **Accounts that do not use the Keystore.** A custom EIP-8141 account gets a standard way to add, rotate and revoke keys that wallets can manage.
+- **One signature for a key change on every chain.** [ethereum/EIPs#12341](https://github.com/ethereum/EIPs/pull/12341) adds an optional change digest to EIP-8130, so one signed key change applies on either design and on any chain. It came out of ERC-8403 and is useful without the Merkle part.
+
+## Status
+
+| Piece | Status |
+|---|---|
+| **EIP-8141** Frame Transaction | :badge[Scheduled for Hegotá]{info} |
+| **EIP-8272** Recent roots, needed for Tier 1 | :badge[Proposed for Hegotá]{warning} |
+| **EIP-8130** Keystore Accounts | :badge[Shipping on Base]{success} Not on the Hegotá list |
+| **ERC-8403** Account Authority Lifecycle | :badge[Draft]{warning} Open PR |
+| **#12340** Keystore read in VERIFY | :badge[Open PR]{warning} Optional chain parameter, off by default |
+| **#12341** Portable change digest | :badge[Open PR]{warning} Optional |
+
+## Open questions
+
+:::warning[Open questions]
+Some of these are ours to settle. Some sit in ERC-8403 itself. The rest are limits that no proposal fixes yet.
+:::
+
+### Ours to settle
+
+1. **Will L1 turn the parameter on?** #12340 makes the Keystore read a per-chain option that starts off. Until L1 lists the Keystore, an account on L1 has to fall back to mirroring its rows or to Tier 2.
+2. **Expiry on EIP-8141.** VERIFY code cannot read `TIMESTAMP`. An account that reads a key's expiry from the Keystore has to require an expiry verifier frame whose deadline is on or before that expiry. The ERC draft now requires this. It still has to be tested on a devnet.
+3. **Delegate keys.** EIP-8130's `DelegateAuthenticator` reads another account's record. #12340 only allows slots keyed to the sender, so delegate keys stay out of the L1 public mempool even with the exemption.
+4. **Recovery.** The Keystore lists an account's keys only through `ActorAuthorized` and `ActorRevoked` event logs, so a wallet cannot list them from state. ERC-8403 recommends keys a wallet can read back from any node. Rebuilding from logs depends on someone serving old logs.
+
+### In ERC-8403
+
+5. **Two bindings are out of date.** The EIP-8141 binding reads the root with `RECENTROOTREFLOAD`. EIP-8272 removed that opcode on 4 September 2026 and uses a canonical verifier frame instead. The EIP-8130 binding describes a checkpointed mode with an image hash that does not appear in EIP-8130's text, and the author's first forum post says 8130 does not publish a root yet.
+6. **The shared signing digest is not defined.** ERC-8403 says both designs must sign one digest for a signature to verify on either. The section that says so is informative and gives no digest.
+7. **No standard recovery scheme exists.** ERC-8403 requires a recovery scheme that claims to work across wallets to define every input that changes what a key can do. It does not define any such scheme yet.
+8. **A portable change can be replayed.** A signed change from config A to B could become valid again if the key later returns to A. The fix proposed in #12341 is a per-key counter that the change has to sign. It only matters for unsequenced changes, because sequenced ones are already single-use.
+
+### Not fixed anywhere yet
+
+9. **Drain against revoke.** A thief holding a key can send a drain transaction next to the owner's revoke, and the block builder picks which lands first. No validation or fee rule changes that.
+10. **Self-kill.** Whoever holds a key can revoke it, so a thief can use it to lock the owner out of that key. The mitigation is a second authority that can still act.
+11. **Revocation across chains.** Each chain has to receive a revoke separately, by batch replay on EIP-8130 or by importing a newer root under ERC-8403.
+12. **What the proof of concept has not run.** Tier 1, an EIP-8141 account reading the EIP-8130 Keystore, and any client other than Nethermind.
+
+Sources: EIP-8141, EIP-8272 and EIP-8130 on the `ethereum/EIPs` master branch, the Hegotá list in EIP-8081, the ERC-8403 draft at the head of #1979, the [discussion thread](https://ethereum-magicians.org/t/erc-8403-account-authority-lifecycle/29570) and the proof-of-concept reports.

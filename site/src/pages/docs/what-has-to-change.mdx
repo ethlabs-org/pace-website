@@ -1,0 +1,110 @@
+---
+title: What we need to do
+description: Every piece of work around PACE, grouped like the work sheet on the landing page, with who does it.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+# What we need to do [Every piece of work around PACE, grouped like the work sheet on the landing page, with who does it.]
+
+PACE is one spec plus a few shared contracts, and it only works once some pieces exist around it. We build the contracts and the parts apps and hardware wallets read, and other teams ship the rest.
+
+| Work | Who | Needs a fork? |
+|---|---|---|
+| **Apps and tools** | | |
+| Give apps one API for PACE | us, with the ERC-5792 authors | :badge[No]{success} |
+| Write the clear signing metadata | us, with the ERC-7730 group | :badge[No]{success} |
+| Get explorers and security tools to read PACE | explorers, simulators, security tools | :badge[No]{success} |
+| **Contracts** | | |
+| Deploy the Keystore on Ethereum | us | :badge[No]{success} |
+| Build the Ethereum account that reads the Keystore | us | :badge[No]{success} |
+| Build the threshold authenticator | us | :badge[No]{success} |
+| Pay gas in tokens like USDC | a working group, as a new ERC | :badge[Open]{warning} |
+| **Network rules** | | |
+| Allow Keystore reads in the public mempool | L1 client teams | :badge[No]{success} node policy |
+| Ship parallel nonces | EIP-8250 authors, L1 client teams | :badge[Hegotá]{info} EIP-8250 |
+| **Protocol** | | |
+| Get every L2 to support assertions | each L2, and the EIP-8130 authors for Base | :badge[No]{success} an L2 upgrade |
+| Adjust EIP-8141 for app permissions | the EIP-8141 authors | :badge[Hegotá]{info} part of 8141 |
+
+## Apps and tools
+
+What apps, hardware wallets and explorers read.
+
+### Give apps one API for PACE
+
+Apps already hand wallets their calls through ERC-5792, with `wallet_sendCalls`, `wallet_getCallsStatus` and `wallet_getCapabilities`. As it stands, 5792 can’t express most of PACE. It has one atomic flag where an EIP-8130 transaction has phases, and it has no way to pick a nonce lane, ask for an assertion or read back what the chain enforced. It also has no status for a failed assertion, where the transaction is included and paid for but its calls are reverted on purpose.
+
+We will write one extension that adds these as capabilities, plus one that says per chain which transport runs there and whether EIP-7906 is live. Permission requests stay on ERC-7715, with one optional `session` object in the response so the app sees the row its permission became. An app then writes one integration and reaches all of PACE in every wallet.
+
+### Write the clear signing metadata
+
+Clear signing metadata is part of PACE. A hardware wallet can only describe an operation if it has ERC-7730 metadata for it, so we will write it for everything PACE does: adding and removing keys, approving and revoking app sessions, running batches, paying through a payer and reading assertions. It goes into the open registry at [clearsigning.org](https://clearsigning.org), and with one set every wallet and every device describes an operation in the same words.
+
+ERC-7730 also needs two additions: a container format, so a device can walk through a batch call by call, and an `assertion` format that renders a check like “at most 1,000.09 USDC out” from its bytes. [What ERC-7730 still lacks](/docs/readable-signing#what-erc-7730-still-lacks) has the full list.
+
+### Get explorers and security tools to read PACE
+
+On EIP-8141 a transaction can have a sender that isn’t the signer, a payer that isn’t the sender and several frames with their own results. On EIP-8130 it has phases and a separate payer. Explorers need to decode both, show who paid and what each phase did, and index the Keystore’s `ActorAuthorized` and `ActorRevoked` events so users see their keys and sessions. Simulators need to run the VERIFY and POST_TX frames and read the Keystore. Security tools need to know which key and which app session acted and what the assertions checked. We want to work this through with them before Hegotá.
+
+## Contracts
+
+Deployed once and shared by every wallet, so they are audited once for everyone.
+
+### Deploy the Keystore on Ethereum
+
+The Keystore is the contract where an account keeps its keys, app sessions and policies as rows. On Base it is a system contract. On Ethereum it can be an ordinary contract at the same CREATE2 address, which the EIP-8130 spec already allows. With one address everywhere, a row means the same thing on every chain, and a key change signed once with `chain_id = 0` can be relayed to every chain the account is on. It needs no fork.
+
+### Build the Ethereum account that reads the Keystore
+
+EIP-8141 doesn’t read the Keystore by itself, so an account needs code that does. In its VERIFY frame it calls `authenticateActor(account, hash, auth)` on the Keystore, checks the row’s scope and expiry, and then calls `APPROVE`. Only the account’s own code can call APPROVE, so this has to be the account itself, and a module added to an existing account can’t do it. An EOA delegates to it through EIP-7702 first and can adopt it for good through EIP-8298.
+
+On 8141 nothing in the protocol keeps a policy key to its one allowed target, so the account code checks every call target itself. The same work covers the two contracts behind app permissions: the permission manager with ERC-7710’s `redeemDelegations` entry point, and the session authenticator that lets one app hold several permissions.
+
+### Build the threshold authenticator
+
+A threshold row makes several keys act as one: a phone and a hardware wallet as a 2 of 2, or a passkey and a security service that can refuse to co-sign. Every wallet has to build and check those signatures the same way, so we build one threshold authenticator for everyone. [Co-signers and multisigs](/docs/transaction-security#co-signers-and-multisigs) has the format.
+
+On Base it runs on the native transaction path once Base adds it to its canonical set. Until then a protected key on Base goes through a policy manager that checks the co-signer’s signature.
+
+### Pay gas in tokens like USDC
+
+A new account should be able to pay its fee in a token without holding ETH, with no trusted party in the middle and with a paymaster anyone can run. EIP-8130 has a signed `payer` field and a draft for token gas payments, EIP-8140. EIP-8141 has paymaster contracts, but the public mempool admits only one pending transaction for a paymaster it doesn’t treat as canonical, which is far too few for one that serves many users. So this needs both a contract design and a mempool answer. It is the least settled item on this page.
+
+## Network rules
+
+Node policy, with no fork.
+
+### Allow Keystore reads in the public mempool
+
+EIP-8141’s mempool rules let a VERIFY frame read only the sender’s own storage. The Keystore is a different contract, so without a new rule a transaction from this account is valid in a block but doesn’t spread through the public mempool. [ethereum/EIPs#12340](https://github.com/ethereum/EIPs/pull/12340) proposes a node rule that allows Keystore reads. The case is the same as for the expiry verifier at `0x8141`: one canonical contract, a known storage layout and bounded reads.
+
+If the rule is refused, the fallback is to mirror every row into the account’s own storage, which costs extra gas on every key change for the life of the account. [ERC-8403 and the Keystore read](/research/erc-8403) covers the alternatives.
+
+### Ship parallel nonces
+
+EIP-8130 gives every account nonce lanes, so an app session never waits behind the user’s own transactions and one stuck transaction doesn’t block the rest. On Ethereum, EIP-8250 adds keyed nonces to frames and is expected in Hegotá, but the public mempool still admits one pending transaction per sender. So EIP-8250 has to ship, and client teams need a rule that admits one pending transaction per sender and lane, with a cap on how many lanes one sender may hold.
+
+## Protocol
+
+Ships with a fork or an L2 upgrade.
+
+### Get every L2 to support assertions
+
+An assertion only protects a user on a chain that runs it. EIP-7906 is expected on Ethereum in Hegotá, and L2s that adopt EIP-8141 get it as the POST_TX frame. Base runs EIP-8130, which has no call that runs after all phases and can revert all of them, so we ask the 8130 authors to add one. Until a chain has it, an assertion can only be a call inside the batch, which guards one phase and can’t see the full result. [Where 8130 and 8141 disagree](/research/the-split#checking-the-result-on-8130) has the detail.
+
+### Adjust EIP-8141 for app permissions
+
+App permissions are stored as session keys. On EIP-8130 the protocol knows which row signed, enforces its scope and limits its calls. On 8141 the account code does all of that, and two things are harder than they need to be: a policy manager can’t tell which row signed, which 8130 exposes through `getTransactionSenderActorId()`, and nothing keeps a policy key to its one allowed target. We will propose small changes to the 8141 authors, with devnet numbers.
+
+## Not on this list
+
+Spending limits, smart batches, cross-chain signatures, privacy and post-quantum authenticators are wallet extensions. A wallet can build them on PACE and other wallets still see their rows, but no wallet has to support them. We may publish reference versions. [What a wallet can add](/docs/extensions) covers them.
+
+## Open issues
+
+- **ETH in a batch.** EIP-8130 calls carry no value and frames do. A portable encoding isn’t defined yet.
+- **Post-quantum gas.** No hash-based verifier written so far fits the 100,000 gas validation limit on either transport.
+- **Threshold members.** The Keystore stores only a hash of a threshold row’s members, so a second wallet needs another way to find them before it can sign.
+- **Co-signers that rotate their key.** Reading the current key from an oracle during validation breaks the same mempool rule as the Keystore read.
+- **EIP-8141 may still change.** It was scheduled with that caveat and edited as late as 1 September 2026.

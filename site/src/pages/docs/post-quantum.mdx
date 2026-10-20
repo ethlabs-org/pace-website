@@ -1,0 +1,66 @@
+---
+title: Move to post-quantum keys
+description: Add a post-quantum key next to the old ones, retire the old ones later, and keep the same address and funds.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+import { Shot } from '../../components/Shot'
+import { Bars } from '../../components/Bars'
+
+# Move to post-quantum keys [Add a post-quantum key next to the old ones, retire the old ones later, and keep the same address and funds.]
+
+Quantum computers could break ECDSA, the signature behind every Ethereum key today. In EIP-8130 each key is a row in the Keystore, and the row names the contract that verifies its signatures. So a post-quantum key is just another row with a different verifier. The user keeps their address, funds and app permissions, and every wallet that opens the account sees the new key.
+
+The EF expects accounts to leave ECDSA one at a time, by moving to accounts that can change their keys, and then to switch ecRecover off. With PACE that move is an ordinary key change.
+
+::::steps
+### Add a post-quantum key
+
+The user adds a post-quantum key from their existing phrase, a new phrase or a hardware wallet. The address doesn’t change and nothing moves.
+
+### Use it next to the old ones
+
+The new key signs everyday transactions while the old keys still exist, so nothing is lost if the new key has a problem.
+
+### Retire the classical rows
+
+Removing the old keys is one signed change. For an account that never was an EOA, the migration ends here.
+
+### For an EOA, close the door for real
+
+An EOA that upgraded through EIP-7702 still has its old key, which can delegate again. EIP-8298 lets the account adopt real code so the protocol stops honouring that key, and EIP-8151 makes ecRecover stop honouring it inside contracts. Permits and orders signed with the old key stop working too.
+::::
+
+<Shot id="pq-key" kind="phone" caption="Adding a quantum-safe key from the phrase the user already has. The address stays the same and nothing migrates." />
+
+## The scheme
+
+PACE doesn’t pick a scheme. Any scheme is a verifier contract that anyone can deploy and a row that any wallet can add, so whatever the ecosystem settles on later becomes one more row type. The mockup uses SPHINCS+, the stateless hash-based scheme standardised as SLH-DSA. Stateless matters for wallets, because a key restored from a phrase on a second device can’t reuse a one-time key by accident.
+
+:::warning[The gas doesn’t fit yet]
+On EIP-8141 the checks before a transaction runs are capped at 100,000 gas, and EIP-8130 suggests the same limit. The hash-based verifiers below all need more. That gap closes with block-level aggregation or a precompile, neither of which PACE ships. We are not claiming a post-quantum key works on either chain today.
+:::
+
+<Bars
+  title="Verification gas per signature"
+  scale="log"
+  unit="gas"
+  rows={[
+    { label: 'secp256k1, EIP-8141 native', value: 2800 },
+    { label: 'P-256, EIP-8141 native', value: 6700 },
+    { label: 'SLH-DSA-Keccak-128-24, contract', value: 94000, display: '~94,000 gas' },
+    { label: 'SPHINCS- C13, contract', value: 127000, display: '~127,000 gas' },
+    { label: 'SPHINCS- C11/C12, contract', value: 276000, display: '~276,000 gas', sub: 'the hardware-wallet variant: slow signing, bigger signature' },
+    { label: 'any scheme, aggregated per block', value: 3000, display: '~3,000 gas', soft: true, sub: 'the EF’s target once block-level proof aggregation lands, after Hegotá' },
+  ]}
+  note="Native figures from EIP-8141’s text, the rest from the SPHINCS- post of 12 June 2026 and the authors’ own measurements. Signatures are also about 60 times larger than secp256k1."
+/>
+
+## Every chain at once
+
+A key change signed once applies on every chain where the account exists. The Keystore sits at the same address on every chain, so the signed change can be relayed to each of them. [How the account works](/docs/account-model#key-changes-on-every-chain) has the mechanism.
+
+## Later: aggregation
+
+Post-quantum signatures are kilobytes and can’t be added together the way BLS signatures can. The EF’s plan is to prove inside one hash-based proof that every signature in a block is valid, and verify one proof per block. PACE writes its verification entry point in that shape now, so the same account works before and after aggregation arrives. Until then, hash-based keys are good for about 2^14 to 2^20 signatures, so the wallet counts them and rotates the key in time.

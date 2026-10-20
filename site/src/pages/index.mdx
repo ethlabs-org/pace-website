@@ -1,0 +1,370 @@
+---
+title: "PACE: Portable Account Core for Ethereum"
+description: "PACE, the Portable Account Core for Ethereum, is an industry effort to agree on the part of Ethereum's new account that every wallet builds the same way: a spec for EIP-8130 keys and sessions, a threshold authenticator, ERC-7715 and ERC-7710 app permissions, EIP-7906 assertions and ERC-7730 clear signing metadata, plus a few shared contracts. Wallets add everything else on top. Stewarded by Ethlabs."
+layout: minimal
+outline: false
+showFeedback: false
+showAskAi: false
+---
+
+import { Hero } from '../components/Hero'
+import { Credits } from '../components/Credits'
+import { Gap, Risks } from '../components/Gap'
+import { Showcase, ThemeIcon } from '../components/Showcase'
+import { Eras } from '../components/Eras'
+import { Road } from '../components/Road'
+import { Join } from '../components/Join'
+import { Todo } from '../components/Work'
+import { Paths } from '../components/Paths'
+import { Reveal } from '../components/Reveal.client'
+import { SketchDefs, TitleBlock } from '../components/Sketch'
+
+<div className="landing" />
+
+<Reveal />
+
+<SketchDefs />
+
+<Hero />
+
+<section className="sec">
+
+## Why this needs to *exist*
+
+<div className="sec-body">
+
+<div className="lead-col">
+
+Each time Ethereum got a new kind of account, every wallet built its own version.
+
+</div>
+
+<Eras items={[
+  { when: '2023', id: 'ERC-4337', title: 'A separate account in every wallet', body: 'Accounts rarely opened in another wallet.' },
+  { when: '2025', id: 'EIP-7702', title: 'New code for old addresses', body: 'Every wallet wrote its own again, and the account’s original key still controls everything.' },
+  { when: 'Hegotá', id: 'EIP-8141', title: 'A new account in the protocol', body: 'Hegotá is expected in 2027, and every wallet rebuilds for it at the same moment. After it, account features ship as contracts with no fork, so nothing makes wallets rebuild together again.', current: true },
+]} />
+
+<Gap
+  wallets={['Wallet A', 'Wallet B', 'Wallet C']}
+  accounts={['Account A', 'Account B', 'Account C']}
+  consumers={[{ name: 'Apps', icon: 'apps' }, { name: 'Hardware wallets', icon: 'device' }, { name: 'Explorers', icon: 'search' }]}
+  split={{ title: 'If every wallet builds its own', note: 'Apps, hardware wallets and explorers support each account separately.' }}
+  shared={{ title: 'If every wallet ships the same core', account: 'PACE', note: 'Apps, hardware wallets and explorers support the core once.' }}
+/>
+
+<Risks items={[
+  { who: 'Users', icon: 'user', title: 'Switching wallets means starting over.', body: 'No other wallet can read your keys, so you move every asset by hand.' },
+  { who: 'Explorers', icon: 'search', title: 'Explorers can’t show what an account did.', body: 'Without a decoder for each wallet, a key change shows up as an unlabelled call.' },
+  { who: 'Hardware wallets', icon: 'device', title: 'Hardware wallets show raw bytes.', body: 'For an account the device doesn’t know, you approve hex you can’t read.' },
+  { who: 'Security', icon: 'shieldAlert', title: 'Transaction checks work in only some wallets.', body: 'Assertions, the checks the chain runs on a transaction’s result, need one encoding. Otherwise hardware wallets can’t show them and apps can’t rely on them.' },
+]} />
+
+</div>
+
+</section>
+
+<section className="sec wide">
+
+## What we need to *do*
+
+<div className="sec-body">
+
+<div className="lead-col">
+
+PACE is one spec plus a few shared contracts, starting with EIP-8130’s Keystore, the contract that holds every account’s keys. We build the contracts and the parts apps and hardware wallets read, and other teams ship the rest. The docs have [each item in detail](/docs/what-has-to-change).
+
+</div>
+
+<Todo
+  title="The work, by where it lands"
+  layers={[
+    { label: 'Apps and tools', caption: 'What apps, devices and explorers read', items: [
+      { ours: true, title: 'Give apps one API for PACE', who: 'Us, with the ERC-5792 authors' },
+      { ours: true, title: 'Write the clear signing metadata', who: 'Us, with the ERC-7730 group', hand: 'for the clearsigning.org registry' },
+      { title: 'Get explorers and security tools to read PACE', who: 'Explorers, simulators, security tools' },
+    ] },
+    { label: 'Contracts', caption: 'Deployed once, shared by every wallet', items: [
+      { ours: true, title: 'Deploy the Keystore on Ethereum', who: 'Us · no fork' },
+      { ours: true, title: 'Build the Ethereum account that reads the Keystore', who: 'Us · no fork' },
+      { ours: true, title: 'Build the threshold authenticator for multisigs and co-signers', who: 'Us · no fork' },
+      { title: 'Pay gas in tokens like USDC', who: 'A working group · new ERC', hand: 'least settled item' },
+    ] },
+    { label: 'Network rules', caption: 'Node policy, no fork', items: [
+      { title: 'Allow Keystore reads in the public mempool', who: 'L1 client teams', hand: 'proposed in EIPs#12340' },
+      { title: 'Ship parallel nonces', who: 'EIP-8250 authors, L1 client teams', hand: 'EIP-8250 is expected in Hegotá' },
+    ] },
+    { label: 'Protocol', caption: 'Ships with a fork or an L2 upgrade', items: [
+      { title: 'Get every L2 to support assertions', who: 'Each L2, the EIP-8130 authors', hand: 'EIP-7906, expected on L1 in Hegotá' },
+      { title: 'Adjust EIP-8141 for app permissions', who: 'The EIP-8141 authors' },
+    ] },
+  ]}
+/>
+
+</div>
+
+</section>
+
+<section className="sec intro">
+
+## What every user *gets*
+
+<div className="sec-body">
+
+<div className="lead-col">
+
+These features come with PACE, so they work in every wallet. The screens are from the interactive mockup.
+
+</div>
+
+</div>
+
+</section>
+
+<section className="sec theme tint-lilac">
+
+<div className="sec-rail" data-noterms>
+
+<ThemeIcon name="atom" />
+
+## Move to post-quantum keys
+
+Quantum computers could break ECDSA, the signature behind every Ethereum key today. In EIP-8130 a contract verifies each key’s signature, so a post-quantum key is just another key, and you keep your address and funds.
+
+</div>
+
+<div className="sec-body">
+
+<Showcase items={[
+  { shot: 'pq-key', title: 'Post-quantum keys', body: 'Add one next to your current keys. Every wallet that opens the account sees it.' },
+  { shot: 'keys', title: 'Retire the old keys', body: 'Remove the ECDSA keys and keep the same address.' },
+  { shot: 'framescan-keystore', kind: 'browser', title: 'New schemes without a fork', body: 'Signature schemes ship as contracts, so a better one needs no hard fork.' },
+  { shot: 'networks', title: 'Every chain at once', body: 'One key change applies on every chain the account is on.' },
+]} />
+
+</div>
+
+</section>
+
+<section className="sec theme tint-sky">
+
+<div className="sec-rail" data-noterms>
+
+<ThemeIcon name="shield" />
+
+## Approve the result you expect
+
+Getting drained is the biggest risk of holding your own keys. A co-signer can refuse a bad transaction before it counts, and the chain reverts any result you didn’t approve.
+
+</div>
+
+<div className="sec-body">
+
+<Showcase items={[
+  { shot: 'batch-state', title: 'Transaction assertions', body: 'Your wallet simulates the transaction and turns the result into assertions. If anything else changes, the chain reverts it.' },
+  { shot: 'protected-key', title: 'Security co-signer', body: 'A shared threshold authenticator lets your key and a security service sign as one. The service screens each transaction and can refuse.' },
+  { shot: 'session-sheet', title: 'App permissions with limits', body: 'Give an app a cap and an end date, like 50 USDC a day for a week.' },
+  { shot: 'app-keys', title: 'Remove access from any wallet', body: 'Any wallet that opens the account can see and revoke what an app may do.' },
+]} />
+
+</div>
+
+</section>
+
+<section className="sec theme tint-stone">
+
+<div className="sec-rail" data-noterms>
+
+<ThemeIcon name="scanText" />
+
+## Read every transaction on your hardware wallet
+
+A hacked web page can show one thing and ask you to sign another, which is how Bybit lost about $1.5 billion in 2025. PACE includes clear signing metadata for every operation, so the hardware wallet decodes the transaction itself and a hacked screen can’t fool you.
+
+</div>
+
+<div className="sec-body">
+
+<Showcase items={[
+  { shot: 'hw-steps', kind: 'hw', title: 'Every step in words', body: 'The device walks through the batch one call at a time.' },
+  { shot: 'hw-assertions', kind: 'hw', title: 'Assertions on the device', body: 'Before you approve, it lists the checks, like at most 1,000 USDC out.' },
+  { shot: 'lantern', title: 'Same words in every wallet', body: 'Each kind of call has one shared description, so every wallet and device uses the same words.' },
+  { shot: 'plain', title: 'Words for every kind of action', body: 'Adding a device or giving an app access shows in plain words, never as code.' },
+]} />
+
+</div>
+
+</section>
+
+<section className="sec theme tint-mint">
+
+<div className="sec-rail" data-noterms>
+
+<ThemeIcon name="face" />
+
+## Use Ethereum like a banking app
+
+Passkeys, batches and sponsored gas come from EIP-8130, so they work in every wallet.
+
+</div>
+
+<div className="sec-body">
+
+<Showcase items={[
+  { shot: 'create', title: 'Passkey signing', body: 'Sign with Face ID. The key never leaves the phone.' },
+  { shot: 'batch-sheet', title: 'One signature for the whole batch', body: 'Approve, swap and deposit in one transaction.' },
+  { shot: 'signin', title: 'Someone else pays the gas', body: 'An app or a sponsor pays the fee, so a new account needs no ETH.' },
+  { shot: 'lanes', title: 'A stuck payment holds nothing up', body: 'Payments don’t wait in one line, so a stuck one never blocks the next.' },
+]} />
+
+</div>
+
+</section>
+
+<section className="sec">
+
+## What app builders *get*
+
+<div className="sec-body">
+
+<div className="lead-col">
+
+Today an app builds a separate transaction path for each kind of account its users bring, and falls back whenever a wallet can’t do something. With PACE every wallet answers the same way, so the app reasons about one path.
+
+</div>
+
+<Paths
+  today={{
+    title: 'Today: a path for each kind of account',
+    rows: [
+      { label: 'Plain EOA', detail: 'Approve, then act, with one signature per call and gas paid in ETH.' },
+      { label: 'EOA upgraded with EIP-7702', detail: 'A batch if the wallet supports it, through code each wallet chose.' },
+      { label: 'ERC-4337 account', detail: 'A user operation through a bundler, with each wallet’s own modules.' },
+      { label: 'Every wallet in between', detail: 'Its own answer on sponsored gas, app permissions and receipts.' },
+    ],
+    note: 'Each path needs its own code, its own tests and a fallback for what a wallet can’t do.',
+  }}
+  pace={{
+    title: 'With PACE: one path',
+    rows: [
+      { label: 'Send', detail: 'One `wallet_sendCalls`, with phases, a gas payer and assertions.' },
+      { label: 'Ask for access', detail: 'One ERC-7715 request, used through ERC-7710.' },
+      { label: 'Read the result', detail: 'The same receipt on every chain, including a failed assertion.' },
+      { label: 'Check the chain', detail: 'One `wallet_getCapabilities` call says what holds there.' },
+    ],
+    note: 'Every wallet that ships PACE runs it the same way, including for EOAs that upgrade in place.',
+  }}
+/>
+
+</div>
+
+</section>
+
+<section className="sec tint-sand">
+
+## What a wallet can *add*
+
+<div className="sec-body">
+
+<div className="lead-col">
+
+These aren’t part of PACE. A wallet adds them on top, and other wallets can still see them even when they can’t use them.
+
+</div>
+
+<Showcase items={[
+  { shot: 'spend-limit', title: 'Spending limits', body: 'Cap what a key spends per day, week or month.' },
+  { shot: 'xchain-sheet', title: 'Cross-chain in one approval', body: 'Move USDC from Base to Arbitrum with one signature.' },
+  { shot: 'private-tab', title: 'Private balance', body: 'Hold ETH in a shielded pool and pay without linking back to your account.' },
+  { shot: 'recovery', title: 'Keys from a recovery phrase', body: 'Rebuild your keys on a new device from a 12-word phrase.' },
+]} />
+
+</div>
+
+</section>
+
+<section className="sec wide">
+
+## The road to *Hegotá*
+
+<div className="sec-body">
+
+<div className="lead-col">
+
+The goal is every wallet shipping PACE by default when Hegotá activates.
+
+{/* TODO(outreach): one or two sentences on who has already been briefed and what they said, by team name. Only
+    teams that agreed to be named. The feedback this page answers asked for it explicitly. */}
+
+</div>
+
+<Road title="From draft to mainnet" steps={[
+  { status: 'done', when: 'Out now', title: 'Public draft', body: 'The ERC, docs, research notes and mockup.' },
+  { status: 'now', when: 'In progress', title: 'Working group', body: 'Wallet, client, hardware, security, explorer and EF teams.', note: 'we are here' },
+  { status: 'next', when: 'Next', title: 'Devnet deployment', body: 'Reference contracts on an EIP-8141 test network.' },
+  { status: 'next', when: 'After devnet', title: 'Revised draft', body: 'Feedback goes in, and anything that doesn’t have to be shared moves to extensions.' },
+  { status: 'next', when: 'Hegotá testnets', title: 'Testnet deployment', body: 'Public gas benchmarks on the Hegotá testnets.' },
+  { status: 'next', when: 'Before mainnet', title: 'Audits and formal verification', body: 'Two independent audits of the account.' },
+  { status: 'next', when: 'Hegotá activation', title: 'Mainnet launch', body: 'A frozen v1 with migration guides.' },
+]} />
+
+<div className="lead-col">
+
+Ethlabs builds the contracts through v1 and organizes the working group. See [deliverables and timeline](/docs/deliverables).
+
+</div>
+
+<div className="cta">
+  <Join />
+</div>
+
+</div>
+
+</section>
+
+<div className="closer" data-noterms>
+
+Help decide what goes into PACE *before Hegotá*.
+
+If you build wallets, apps, hardware wallets or tools, tell us what PACE is missing or what should be an extension. Joining the working group is how you get a say.
+
+<div className="cta">
+  <Join />
+  <a className="btn ghost" href="/demo/demo.html" target="_blank" rel="noreferrer">Try the interactive mockup</a>
+  <a className="btn ghost" href="/docs">Read the docs</a>
+</div>
+
+<TitleBlock
+  stamp="Draft"
+  rows={[
+    { label: 'Project', value: 'PACE: Portable Account Core for Ethereum' },
+    { label: 'Number', value: 'ERC-XXXX' },
+    { label: 'Status', value: 'Draft, open for comment' },
+    { label: 'First draft', value: '21 Sep 2026' },
+    { label: 'Target', value: 'Hegotá' },
+    { label: 'Drawn by', value: 'Ethlabs' },
+    { label: 'Reviewed by', open: 'your team?' },
+  ]}
+/>
+
+</div>
+
+<Credits
+  title="Acknowledgements"
+  note="thank you!"
+  core={[
+    { name: 'Keystore Accounts', id: 'EIP-8130', authors: 'Chris Hunter' },
+    { name: 'Execution permissions', id: 'ERC-7715', authors: 'Luka Isailovic, Derek Rein, Dan Finlay, Derek Chiang, Fil Makarov, Pedro Gomes, Conner Swenberg, Lukas Rosario, Idris Bowman, Jeff Smale' },
+    { name: 'Smart contract delegation', id: 'ERC-7710', authors: 'Ryan McPeck, Dan Finlay, Rob Dawson, Derek Chiang' },
+    { name: 'Transaction Assertions', id: 'EIP-7906', authors: 'Alex Forshtat, Shahaf Nacson, Dror Tirosh, Yoav Weiss, Fredrik Svantes' },
+  ]}
+  items={[
+  { name: 'Frame Transaction', id: 'EIP-8141', authors: 'Vitalik Buterin, lightclient, Felix Lange, Yoav Weiss, Alex Forshtat, Dror Tirosh, Shahaf Nacson, Derek Chiang, Toni Wahrstätter, Stavros Vlachakis' },
+  { name: 'Clear Signing', id: 'ERC-7730', authors: 'Laurent Castillo, Derek Rein, Pierre Aoun, Arik Galansky, Bartosz Rozwarski, Kaan Uzdogan, Fredrik, Alex Forshtat' },
+  { name: 'Wallet Call API', id: 'ERC-5792', authors: 'Moody Salem, Lukas Rosario, Wilson Cusack, Dror Tirosh, Jake Moxey, Derek Rein, Alex Forshtat, Sam Wilson, Borislav Itskov, Joao Tavares, Adam Fuller, Philip Liao, bumblefudge' },
+  { name: 'Recent Roots', id: 'EIP-8272', authors: 'Thomas Thiery, Vitalik Buterin, Toni Wahrstätter, lightclient' },
+  { name: 'Smart Batching', id: 'ERC-8211', authors: 'Mislav Javor, Filip Dujmusic, Filipp Makarov, Venkatesh Rajendran' },
+  { name: 'Crosschain EIP-712', id: 'ERC-7964', authors: 'Ernesto Garcia' },
+  { name: 'User operations', id: 'ERC-4337', authors: 'Vitalik Buterin, Yoav Weiss, Dror Tirosh, Shahaf Nacson, Alex Forshtat, Kristof Gazso, Tjaden Hess' },
+  ]}
+/>

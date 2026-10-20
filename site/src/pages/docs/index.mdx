@@ -1,0 +1,59 @@
+---
+title: Overview
+description: What PACE is, what the spec covers, which contracts it ships, and what stays with each wallet.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+# Overview [What PACE is, what the spec covers, which contracts it ships, and what stays with each wallet.]
+
+:::warning[Read this first]
+This is an opinionated draft by the Ethlabs team, and every choice about what goes into the core is open to change. We are publishing it now so wallet, client, hardware, security, explorer and EF teams have one concrete thing to argue about before Hegotá ships.
+:::
+
+PACE, the Portable Account Core for Ethereum, is an industry coordination effort around one spec and a few shared contracts. The Hegotá upgrade adds a new account type to Ethereum, and every wallet has to rebuild its accounts for it. PACE is the part of that account every wallet should build the same way, so an account opens in any wallet and any hardware wallet can read what it signs. Everything else stays with the wallet.
+
+## What the spec covers
+
+The spec has five parts. Each one has to work the same in every wallet, and each has one reason for that.
+
+- **The full EIP-8130 feature set.** Keys, what each key may do and app sessions, stored as rows in the Keystore, one shared contract in the format Base already ships. It also covers batched calls and a separate gas payer. Another wallet can then import the account and everything set up on it.
+- **A shared threshold authenticator.** It lets several keys act as one key: a phone and a hardware wallet as a 2 of 2, or a passkey and a security service that can refuse to co-sign. A co-signed or multisig key then keeps working after a wallet switch.
+- **App permissions, through ERC-7715 and ERC-7710.** An app asks for a permission, like up to 200 USDC a week, the wallet stores it as an app session, and one shared permission manager checks every use. Apps integrate once, and permissions carry over when a user switches wallets.
+- **Assertions, through EIP-7906, from one shared builder.** Assertions are checks the chain runs after a transaction, like at most 1,000 USDC out. Every wallet encodes them the same way, so a hardware wallet can decode them and show them in words.
+- **Clear signing metadata, through ERC-7730.** A description of every operation in PACE, published in the open registry at [clearsigning.org](https://clearsigning.org). Every wallet and hardware wallet then shows the same operation in the same words, worked out from the bytes it signs.
+
+One more thing ships with the spec: an extension to ERC-5792, the API apps already use to talk to wallets, so an app reaches everything in PACE through it.
+
+## The shared contracts
+
+Wallets use these instead of building and auditing their own:
+
+- the Keystore, deployed on Ethereum at the same address as on Base
+- the EIP-8141 account that reads the Keystore
+- the permission manager and the session authenticator for app permissions
+- the threshold authenticator
+- the assertion builder and the assertion contract
+
+Ethlabs builds them through v1. [The road to Hegotá](/docs/deliverables) has the plan.
+
+## What stays with the wallet
+
+Everything else is a wallet extension: spending limits, smart batches and cross-chain signatures, private balances, and how keys come from a recovery phrase. Extensions sit on ordinary Keystore rows, so a wallet that doesn't support one still sees the row and can remove it. [What a wallet can add](/docs/extensions) covers them.
+
+## How these docs are organized
+
+They follow the landing page:
+
+1. [Why this needs to exist](/docs/why-now): what happened with earlier accounts, and why Hegotá is the moment.
+2. [What we need to do](/docs/what-has-to-change): every piece of work around PACE and who does it.
+3. What every user gets: [post-quantum keys](/docs/post-quantum), [approving the result you expect](/docs/transaction-security), [reading every transaction on a hardware wallet](/docs/readable-signing) and [an account that feels like a banking app](/docs/banking-app).
+4. [What app builders get](/docs/app-builders): one transaction path in place of one for each kind of account.
+5. [What a wallet can add](/docs/extensions) on top.
+6. [The road to Hegotá](/docs/deliverables): the plan from draft to mainnet, and how to get involved.
+
+Two reference pages hold the detail: [how the account works](/docs/account-model) and [the standards it is built from](/docs/standards).
+
+:::tip[The interactive mockup]
+The screens on these pages come from an interactive mockup: a wallet (Keel), an app (Tidepool), a hardware wallet (Anchor), an explorer (Framescan) and a second wallet (Lantern) that opens the same account. It uses sample data, touches no chain and signs nothing. <a href="/demo/demo.html" target="_blank" rel="noreferrer">Open the interactive mockup</a>.
+:::

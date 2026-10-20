@@ -1,0 +1,61 @@
+---
+title: Why this needs to exist
+description: Each new kind of account so far ended up as one version per wallet. Hegotá is the chance to build one core instead.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+import { Timeline } from '../../components/Timeline'
+
+# Why this needs to exist [Each new kind of account so far ended up as one version per wallet. Hegotá is the chance to build one core instead.]
+
+## It has happened twice
+
+Each time Ethereum got a new kind of account, every wallet built its own version.
+
+- **ERC-4337, from 2023.** Safe, Nexus, Kernel, MetaMask’s DeleGator, Coinbase Smart Wallet and Ambire each shipped their own account contract. They mostly do the same things: someone else pays the gas, calls are batched, apps hold session keys and keys rotate. Each does them its own way, so an account rarely opens in another wallet.
+- **EIP-7702, from 2025.** Existing addresses got code. There was no shared account to point that code at, so each wallet wrote its own delegation target again, and the original key still controls everything.
+- **EIP-8141, at Hegotá.** Ethereum gets a new account type in the protocol, and every wallet has to rebuild once more.
+
+## What a split costs
+
+When every wallet builds its own account, every app, hardware wallet and explorer has to support each one separately, and most never do. When every wallet ships the same core, they support it once. A split hurts four groups:
+
+- **Users.** Switching wallets means starting over. No other wallet can read their keys, so they open a new account and move every asset by hand.
+- **Explorers.** Without a decoder for each wallet, a key change or a new app permission shows up as an unlabelled contract call.
+- **Hardware wallets.** A device can only describe a transaction if it knows how the account encodes its calls and checks. For any other account, the user approves hex they can’t read.
+- **Security.** Assertions only protect users if hardware wallets can show them and apps can rely on them, and that needs one encoding.
+
+## Why now
+
+<Timeline
+  title="The dates that matter"
+  from="2025-03"
+  to="2027-12"
+  today="2026-09-21"
+  events={[
+    { date: '2025-05', label: 'Pectra: EIP-7702 goes live' },
+    { date: '2026-01-16', label: 'ERC-7715 rewritten' },
+    { date: '2026-04-06', label: 'MetaMask ships 7715 permissions' },
+    { date: '2026-05-12', label: 'ERC-7730 moves under the EF' },
+    { date: '2026-08-27', label: 'EIP-8141 scheduled for Hegotá' },
+    { date: '2026-09-07', label: 'EF tier list: 8141 must-ship' },
+    { date: '2026-09-15', label: '8130 and 8141 stop merging' },
+    { date: '2026-09-21', label: 'First draft published', kind: 'today' },
+    { date: '2026-12', label: 'Glamsterdam, expected', kind: 'next' },
+    { date: '2027-07', label: 'Hegotá, 2027, no date yet', kind: 'fork' },
+  ]}
+  note="Dates up to 21 September 2026 come from each standard’s own text or announcement. Glamsterdam and Hegotá have no activation dates, so they sit in their expected windows."
+/>
+
+**The new account is scheduled.** EIP-8141 was scheduled for Hegotá on 27 August 2026, and the EF’s tier list of 7 September calls it a must-ship item. Assertions (EIP-7906), keyed nonces (EIP-8250) and recent roots (EIP-8272) are expected to ship with it. Hegotá itself is expected in 2027.
+
+**It is the last time every wallet rebuilds at once.** After Hegotá, new account features ship as contracts with no fork, so nothing makes every wallet rebuild together again.
+
+**Base and Ethereum split.** EIP-8130 and EIP-8141 were meant to converge, and in the week before 15 September 2026 their authors stopped trying. Base ships 8130 and Ethereum ships 8141. A wallet that wants both needs two account designs, unless one core sits above both. PACE defines that core once and says how each chain carries it.
+
+**Everyone rebuilds anyway.** Every ERC-4337 account needs a core upgrade to run on EIP-8141, because only the account’s own code can approve a transaction. An EOA that wants to retire its key needs EIP-8298 and EIP-8151. Since every wallet migrates anyway, moving to a shared design costs little more than moving to a new private one.
+
+:::note[What we are not claiming]
+EIP-8130 will not ship on Ethereum, which ships EIP-8141. The claim is that 8130’s account interfaces (the Keystore, rows, scopes, policy managers and nonce keys) can run on 8141 with account code and two mempool rules. Both rules are on [what we need to do](/docs/what-has-to-change), and the claim can be tested on the Ethrex devnet now.
+:::

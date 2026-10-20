@@ -1,0 +1,9 @@
+node_modules
+dist
+.DS_Store
+site/.vocs
+site/public/demo
+site/public/shots
+site/src/components/shots.gen.ts
+site/src/pages.gen.ts
+.claude/

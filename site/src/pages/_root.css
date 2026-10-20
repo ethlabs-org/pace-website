@@ -1,0 +1,1810 @@
+/* PACE (Portable Account Core for Ethereum) site on vocs.
+   The look: a flat white page, near-black ink, three greys and hairline rules. Structure comes from rules and
+   alignment. There are no card boxes, tinted grounds or icon chips. The green is for links only. Status colours
+   appear as small dots and never as a filled tint behind text.
+   Everything sizes off the scales in :root. No literal px in the component styles below, apart from a few
+   one-off geometry numbers that are commented where they appear.
+   The landing adds a small-press print layer on top of this: the hand for a word or two in a heading, riso
+   grain in the tinted grounds, a halftone under the pointer, a hand-drawn underline, a rubber stamp, and motion that
+   settles like ink. It lives in one block, "Print touches", near the end of the landing styles. A second block,
+   "Sketch layer", right after it, draws the landing's outlines and rules as if by hand and adds handwritten notes. */
+@import '@fontsource-variable/schibsted-grotesk';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource-variable/caveat';
+
+:root {
+  --vocs-font-family: 'Schibsted Grotesk Variable', 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --vocs-font-family-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* The hand: handwritten margin notes on the landing, and the accent word or two inside a landing heading.
+     Never for body text. */
+  --hand: 'Caveat Variable', 'Caveat', 'Bradley Hand', cursive;
+
+  /* ---- ground ---- */
+  --bg: #FFFFFF;
+  --surface-2: #F6F6F4;   /* screenshot plates, code blocks, row hover */
+  --hair: rgba(16, 18, 22, .09);
+  --hair-strong: rgba(16, 18, 22, .16);
+  /* The rule over a labelled group (a table head). Darker than a row divider, lighter than ink, so a page with
+     several groups does not turn into a stack of black bars. */
+  --rule: rgba(16, 18, 22, .72);
+
+  /* ---- ink. ratios against white ---- */
+  --ink: #101216;      /* 18.6:1 */
+  --ink-2: #41464E;    /*  9.6:1 */
+  --ink-3: #6A707A;    /*  5.0:1, 4.7:1 on --surface-2 */
+
+  --accent: #0E6F47;   /*  6.2:1. links only */
+  --accent-2: #0B603D;
+
+  /* ---- status: dots only ---- */
+  --st-ok: #1C8C58;
+  --st-wait: #C27C12;
+  --st-info: #3A67C9;
+  --st-note: #9197A0;
+  --st-bad: #C8372D;
+
+  /* ---- space: 4-based, nine steps ---- */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px;
+  --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px;
+
+  /* ---- radius: small on purpose ---- */
+  --r-1: 4px;   /* badges, tooltips */
+  --r-2: 6px;   /* buttons, code blocks */
+  --r-3: 10px;  /* screenshot plates, charts */
+
+  /* The shadow device captures carry. It is soft and short because the captures sit on a grey plate. */
+  --drop:
+    0 1px 2px rgba(16, 18, 22, .06),
+    0 12px 32px -12px rgba(16, 18, 22, .18);
+
+  /* ---- type: ten steps ---- */
+  --t-1: 12px; --t-2: 13px; --t-3: 14px; --t-4: 15px; --t-5: 17px;
+  --t-6: 20px; --t-7: 24px; --t-8: 30px; --t-9: 44px; --t-10: 64px;
+
+  /* ---- motion: one easing, two durations ---- */
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --d-1: 120ms; --d-2: 200ms;
+  --d-3: 900ms;   /* reveals on the landing */
+
+  /* ---- print grain. Tiled fractal noise as specks: dark specks for light grounds, light specks for dark ones.
+     The alpha row of the colour matrix reads the noise's red channel, so only the brighter half of the noise
+     leaves a speck. Light specks show more on a dark ground, so they are set weaker. --grain follows the theme;
+     --grain-on-ink is for the inverted closing band. ---- */
+  --grain-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .45 0 0 0 -.2'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .3 0 0 0 -.13'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain: var(--grain-dark);
+  --grain-on-ink: var(--grain-light);
+
+  --c-tip-bg: #101216;
+  --c-tip-fg: #FFFFFF;
+
+  /* ---- vocs reads these ---- */
+  --vocs-background-color-primary: var(--bg);
+  --vocs-background-color-surface: var(--bg);
+  --vocs-background-color-surfaceMuted: var(--surface-2);
+  --vocs-background-color-surfaceTint: var(--surface-2);
+  --vocs-background-color-blockquote: transparent;
+  --vocs-background-color-code-block: var(--surface-2);
+  --vocs-background-color-inline-code: transparent;
+
+  --vocs-text-color-primary: var(--ink);
+  --vocs-text-color-secondary: var(--ink-2);
+  --vocs-text-color-muted: var(--ink-3);
+  --vocs-text-color-heading: var(--ink);
+  --vocs-text-color-quote: var(--ink-2);
+  --vocs-text-color-link: var(--accent);
+  --vocs-text-color-link-hover: var(--accent-2);
+
+  --vocs-border-color-primary: var(--hair);
+  --vocs-border-color-secondary: var(--hair);
+
+  /* Callout and code-diff colours. The text colours are dark enough for body text on white; the tints are only
+     used by vocs for diff lines and focus rings, never as a callout ground (callouts are a rail, see below). */
+  --vocs-color-success: #0E6F47;
+  --vocs-color-success-hover: #0B603D;
+  --vocs-background-color-success-tint: #EEF5F1;
+  --vocs-border-color-success-tint: #DCEBE2;
+  --vocs-color-tip: #0E6F47;
+  --vocs-color-tip-hover: #0B603D;
+  --vocs-background-color-tip-tint: #EEF5F1;
+  --vocs-border-color-tip-tint: #DCEBE2;
+  --vocs-color-info: #2B58B5;
+  --vocs-color-info-hover: #234A99;
+  --vocs-background-color-info-tint: #EFF2F9;
+  --vocs-border-color-info-tint: #DEE4F2;
+  --vocs-color-note: #4A4F57;
+  --vocs-color-note-hover: #33373D;
+  --vocs-background-color-note-tint: #F3F3F4;
+  --vocs-border-color-note-tint: #E6E6E8;
+  --vocs-color-warning: #8F5410;
+  --vocs-color-warning-hover: #75440C;
+  --vocs-background-color-warning-tint: #FAF4EB;
+  --vocs-border-color-warning-tint: #F0E4D2;
+  --vocs-color-destructive: #B3261E;
+  --vocs-color-destructive-hover: #9A1F18;
+  --vocs-color-destructive-tint: #FBEDEB;
+  --vocs-border-color-destructive-tint: #F4DAD7;
+
+  --vocs-leading-p: 1.65;
+  --vocs-leading-li: 1.6;
+  --vocs-spacing-content: 760px;
+}
+
+:root[style*='color-scheme:dark'],
+:root[style*='color-scheme: dark'] {
+  --bg: #0C0D0F;
+  --surface-2: #15171A;
+  --hair: rgba(255, 255, 255, .08);
+  --hair-strong: rgba(255, 255, 255, .15);
+  --rule: rgba(255, 255, 255, .6);
+
+  --ink: #ECEDEF;
+  --ink-2: #B4B8BF;
+  --ink-3: #8B919A;
+
+  --accent: #7ED9A9;
+  --accent-2: #A3E6C2;
+
+  --st-ok: #4FC48A;
+  --st-wait: #E3A544;
+  --st-info: #7FA5F0;
+  --st-note: #7D838C;
+  --st-bad: #EE7A70;
+
+  --drop:
+    0 1px 2px rgba(0, 0, 0, .4),
+    0 12px 32px -12px rgba(0, 0, 0, .6);
+
+  --c-tip-bg: #ECEDEF;
+  --c-tip-fg: #101216;
+
+  --grain: var(--grain-light);
+  --grain-on-ink: var(--grain-dark);
+
+  --vocs-color-success: #7ED9A9;
+  --vocs-color-success-hover: #A3E6C2;
+  --vocs-background-color-success-tint: #13241B;
+  --vocs-border-color-success-tint: #1B3326;
+  --vocs-color-tip: #7ED9A9;
+  --vocs-color-tip-hover: #A3E6C2;
+  --vocs-background-color-tip-tint: #13241B;
+  --vocs-border-color-tip-tint: #1B3326;
+  --vocs-color-info: #9DBAF3;
+  --vocs-color-info-hover: #BCD0F7;
+  --vocs-background-color-info-tint: #141C2C;
+  --vocs-border-color-info-tint: #1D2840;
+  --vocs-color-note: #B4B8BF;
+  --vocs-color-note-hover: #D3D6DA;
+  --vocs-background-color-note-tint: #17181B;
+  --vocs-border-color-note-tint: #222429;
+  --vocs-color-warning: #EDB577;
+  --vocs-color-warning-hover: #F4CB9C;
+  --vocs-background-color-warning-tint: #261C10;
+  --vocs-border-color-warning-tint: #3A2A16;
+  --vocs-color-destructive: #F19B95;
+  --vocs-color-destructive-hover: #F5B8B3;
+  --vocs-color-destructive-tint: #2C1516;
+  --vocs-border-color-destructive-tint: #3E1D1F;
+}
+
+/* ---- Base ---- */
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background: var(--bg);
+}
+body { font-feature-settings: 'kern' 1, 'liga' 1; background: var(--bg); }
+
+/* The top bar stays readable while content scrolls under it, and a hairline closes it off at every width.
+   vocs 2 marks it with data-v-gutter-top; if an upgrade drops that attribute the bar just loses its blur. */
+[data-v-gutter-top] {
+  background-color: color-mix(in srgb, var(--bg) 86%, transparent) !important;
+  backdrop-filter: saturate(1.2) blur(12px);
+  -webkit-backdrop-filter: saturate(1.2) blur(12px);
+  border-bottom: 1px solid var(--hair);
+}
+
+/* The docs frame: vocs draws the content area as a card with a rounded top-left corner. A plain hairline column
+   edge reads as part of the page instead of a panel set into it. */
+[data-v-surface-bg], [data-v-outline-mobile] { border-top-left-radius: 0 !important; }
+
+/* Active sidebar item: a grey ground and the ink colour. The accent is ink (vocs.config.ts), so vocs' own tint is grey too. */
+[data-v-sidebar-item][data-active] { font-weight: 500; }
+
+/* The wordmark is the config title set as live text, so it uses the site's own face in both themes. The mark
+   in front of it is the favicon's: an E cut from a square, drawn as a mask so it takes the ink colour. The size
+   keeps the full name on one line: 15px over the docs sidebar, 13px in a phone's top bar. */
+[data-v-logo-text] {
+  display: flex; align-items: center; gap: 10px;
+  font-size: var(--t-4); font-weight: 600; letter-spacing: -.01em; line-height: 1;
+  color: var(--ink);
+}
+@media (max-width: 420px) { [data-v-logo-text] { font-size: var(--t-2); gap: 8px; } }
+[data-v-logo-text]::before {
+  content: ''; width: 20px; height: 20px; flex: none;   /* the mark */
+  background: var(--ink);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M4 0h12a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4zm2 5v10h8v-2H8.5v-2h4V9h-4V7H14V5z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M4 0h12a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4zm2 5v10h8v-2H8.5v-2h4V9h-4V7H14V5z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* ---- Callouts: a coloured rail on the left edge and no ground. The rail and the title take the callout's
+   colour, the body stays in the text greys. ---- */
+article aside {
+  background: none !important;
+  border: 0 !important;
+  border-left: 2px solid currentColor !important;
+  border-radius: 0 !important;
+  padding: var(--s-1) 0 var(--s-1) var(--s-5) !important;
+}
+article aside p,
+article aside li { color: var(--ink-2); }
+article aside > :first-child { color: currentColor; }
+
+/* ---- Status badges: a dot and a word inside a hairline, instead of a coloured pill. The dot carries the
+   status, so the text can stay one grey and a row of three badges does not read as three colours. ---- */
+[data-v-badge] {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--hair-strong);
+  border-radius: var(--r-1);
+  padding: 1px 7px 1px 6px;
+  font-size: var(--t-1); font-weight: 500; line-height: 18px; letter-spacing: 0;
+  white-space: nowrap;
+}
+[data-v-badge]::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; flex: none;   /* the status dot */
+  background: var(--st-note);
+}
+[data-v-badge][data-v-context='success']::before,
+[data-v-badge][data-v-context='tip']::before { background: var(--st-ok); }
+[data-v-badge][data-v-context='warning']::before { background: var(--st-wait); }
+[data-v-badge][data-v-context='info']::before { background: var(--st-info); }
+[data-v-badge][data-v-context='danger']::before,
+[data-v-badge][data-v-context='destructive']::before { background: var(--st-bad); }
+
+/* ---- Inline code: the mono face and a quieter ink carry it. No chip, so punctuation after it is not orphaned. ---- */
+:not(pre) > code {
+  background: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  color: var(--ink-2);
+  font-size: .9em;
+  font-weight: 500;
+}
+
+/* ---- Code blocks: the second surface and a scrollbar you can see when a line overflows. ---- */
+pre { scrollbar-width: thin; scrollbar-color: var(--hair-strong) transparent; }
+pre::-webkit-scrollbar { height: var(--s-2); }
+pre::-webkit-scrollbar-thumb { background: var(--hair-strong); border-radius: var(--r-1); }
+pre::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- Glossary: a dotted term (abbr.t) and a standard id (a.std). ---- */
+abbr.t {
+  text-decoration: underline dotted 1px;
+  text-decoration-color: color-mix(in srgb, var(--ink-3) 45%, transparent);
+  text-underline-offset: 3px;
+  border-bottom: 0;
+  cursor: help;
+  transition: text-decoration-color var(--d-1) var(--ease);
+}
+abbr.t:hover, abbr.t:focus-visible {
+  text-decoration-color: var(--ink);
+  background: none;
+  box-shadow: none;
+  outline: none;
+}
+/* A standard id is a reference, so it reads like one: the text face, the surrounding colour, a solid hairline
+   underline. Coloured mono ids in every paragraph made the prose look like a code listing. */
+a.std {
+  font: inherit;
+  font-weight: 500;
+  color: inherit !important;
+  background: none;
+  padding: 0;
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-decoration-color: var(--hair-strong) !important;
+  text-underline-offset: .2em;
+  white-space: nowrap;
+  transition: color var(--d-1) var(--ease), text-decoration-color var(--d-1) var(--ease);
+}
+a.std:hover, a.std:focus-visible { color: var(--accent) !important; text-decoration-color: currentColor !important; outline: none; }
+a.std::after { display: none !important; }
+#term-tip {
+  position: absolute; z-index: 60;
+  background: var(--c-tip-bg); color: var(--c-tip-fg);
+  font-size: var(--t-3); line-height: 1.45;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .18);
+  pointer-events: none;
+  font-family: var(--vocs-font-family);
+}
+#term-tip::after {
+  content: ''; position: absolute; left: var(--ax, 50%); bottom: -5px;
+  width: 10px; height: 10px; margin-left: -5px;      /* the arrow, rotated 45deg. Geometry, so off the scale */
+  background: var(--c-tip-bg); transform: rotate(45deg); border-radius: 1px;
+}
+#term-tip.below::after { bottom: auto; top: -5px; }
+
+/* ---- Buttons: one ink block and one hairline block. Small radius, no shadow. ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  height: 44px;                               /* the minimum comfortable target */
+  padding: 0 var(--s-5); border-radius: var(--r-2);
+  background: var(--ink); color: var(--bg) !important;
+  font-weight: 500; font-size: var(--t-4); letter-spacing: -.005em;
+  text-decoration: none !important;
+  transition: background-color var(--d-1) var(--ease), box-shadow var(--d-2) var(--ease), translate var(--d-2) var(--ease);
+}
+.btn:hover { background: color-mix(in srgb, var(--ink) 84%, var(--bg)); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.btn.ghost { background: transparent; color: var(--ink) !important; box-shadow: inset 0 0 0 1px var(--hair-strong); }
+.btn.ghost:hover { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--hair-strong); }
+.btn::after { display: none !important; }
+.btn svg { width: 15px; height: 15px; margin-right: -4px; opacity: .6; transition: transform var(--d-2) var(--ease); }
+.btn:hover svg { transform: translate(2px, -2px); }
+/* The primary button on hover: it lifts off a mint copy of itself, like a second ink printed a little out of
+   register. */
+.btn:not(.ghost):hover { translate: -2px -2px; box-shadow: 4px 4px 0 var(--tint-mint-ink); }
+.cta { display: flex; flex-wrap: wrap; gap: var(--s-3); margin: var(--s-2) 0 var(--s-6); }
+
+/* =================================================================================================================
+   Landing page
+   ================================================================================================================= */
+
+/* The page grid: a rail on the left for section headings and the preamble, the content on the right. Every block
+   on the page starts on one of those two lines. */
+:root:has(.landing) {
+  --vocs-spacing-content: 1200px;
+  --rail: 224px;
+  --rail-gap: var(--s-7);
+}
+
+/* ---- Landing tints. Five soft grounds for cards and plates, each with an ink that reads on it. They are the only
+   colour on the page besides the screenshots, so each section gets one or two and no more. ---- */
+:root {
+  --tint-mint: #EBF5EF;  --tint-mint-ink: #0E6F47;
+  --tint-sky: #ECF1FA;   --tint-sky-ink: #2B58B5;
+  --tint-sand: #F8F1E6;  --tint-sand-ink: #8F5410;
+  --tint-lilac: #F1EEFA; --tint-lilac-ink: #5B45B8;
+  --tint-stone: #F0F0EE; --tint-stone-ink: #41464E;
+  --lift: 0 1px 2px rgba(16, 18, 22, .06), 0 24px 48px -18px rgba(16, 18, 22, .30);
+}
+:root[style*='color-scheme:dark'],
+:root[style*='color-scheme: dark'] {
+  --tint-mint: #11211A;  --tint-mint-ink: #7ED9A9;
+  --tint-sky: #121A2A;   --tint-sky-ink: #9DBAF3;
+  --tint-sand: #221A10;  --tint-sand-ink: #EDB577;
+  --tint-lilac: #1B1729; --tint-lilac-ink: #BBAAF6;
+  --tint-stone: #18191C; --tint-stone-ink: #C9CDD3;
+  --lift: 0 1px 2px rgba(0, 0, 0, .5), 0 24px 48px -18px rgba(0, 0, 0, .8);
+}
+.tint-mint  { --tint: var(--tint-mint);  --tint-ink: var(--tint-mint-ink); }
+.tint-sky   { --tint: var(--tint-sky);   --tint-ink: var(--tint-sky-ink); }
+.tint-sand  { --tint: var(--tint-sand);  --tint-ink: var(--tint-sand-ink); }
+.tint-lilac { --tint: var(--tint-lilac); --tint-ink: var(--tint-lilac-ink); }
+.tint-stone { --tint: var(--tint-stone); --tint-ink: var(--tint-stone-ink); }
+
+/* ---- Hero, centred: the steward line, the promise, the lede and the buttons on one axis, then three demo
+   screens on a stage under them. ---- */
+/* The diamond's box reaches past the content column into the page margin; clip rather than scroll. clip does not create a
+   scroll container, so the sticky section headings below keep working. */
+:root:has(.landing) body { overflow-x: clip; }
+.hero { padding: var(--s-7) 0 var(--s-8); }
+.hero-copy { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.hero h1 {
+  font-size: clamp(44px, 4.6vw, 64px);
+  font-weight: 600; line-height: 1.07; letter-spacing: -.036em;
+  max-width: 14em; margin: 0 0 var(--s-5); padding: 0; border: 0;
+  text-wrap: balance; color: var(--ink);
+}
+/* The Ethereum diamond in front of the word, sized to the cap height and kept on the same line as the word. The
+   official asset is black and grey, so dark mode inverts it. */
+.eth-word { white-space: nowrap; }
+.eth-mark { display: inline-block; height: .78em; width: auto; margin: 0 .16em 0 .02em; vertical-align: -.02em; }
+:root[style*='color-scheme:dark'] .eth-mark,
+:root[style*='color-scheme: dark'] .eth-mark { filter: invert(1); }
+.hero-lede {
+  font-size: var(--t-5); line-height: 1.4; color: var(--ink-2); letter-spacing: -.008em;
+  margin: 0 0 var(--s-6); max-width: 34em; text-wrap: pretty;
+}
+.hero-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-3); }
+.hero-cta .btn { height: 48px; }
+/* The stage. No plate: the devices stand on the page with a soft glow under them. The stage keeps one aspect
+   ratio and every position is a percentage, so the composition scales as one piece. Keel sits on the centre line,
+   Lantern leans in behind it from the left and the hardware wallet stands in front on the right. */
+.hero-stage { position: relative; width: 100%; max-width: 900px; margin: var(--s-8) auto 0; aspect-ratio: 900 / 540; }
+.hero-stage::before {
+  content: ''; position: absolute; inset: 6% 12% 4%; border-radius: 50%; z-index: 0;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--tint-mint-ink) 22%, transparent), transparent);
+  filter: blur(24px);
+}
+/* The backdrop behind the devices (HeroOrbit): a glass wireframe of the Ethereum diamond, turning slowly. Square
+   and centred on the stage, a little taller than it, so the apex rises behind the buttons' row and the tip reaches
+   the steward line. Strokes stay one pixel at any size. */
+.orbit {
+  position: absolute; left: 50%; top: 50%; z-index: 0; width: 66%; height: auto; aspect-ratio: 1;
+  transform: translate(-50%, -50%); overflow: visible; pointer-events: none;
+  will-change: transform;   /* its own layer, so redrawing it does not repaint the devices around it */
+}
+.orbit-face { fill: var(--tint-mint-ink); }
+/* The canvas the client draws the turning diamond on (HeroOrbit): a quarter wider than the SVG box, since the
+   solid's tips reach past it. */
+.orbit-canvas { width: calc(66% * 1.25); }
+.orbit-edge { fill: none; stroke: var(--tint-mint-ink); stroke-opacity: .55; stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.hero-stage > img { position: absolute; display: block; height: auto; box-shadow: var(--lift); animation: rise 700ms var(--ease) backwards; }
+.hs-back  { width: 25%; left: 15%;  top: 9%;  border-radius: 10.8% / 5.2%; z-index: 1; transform: rotate(-4deg); animation-delay: 60ms; }
+.hs-front { width: 27%; left: 36.5%; top: 2%; border-radius: 10.8% / 5.2%; z-index: 2; animation-delay: 160ms; }
+.hs-hw    { width: 33%; left: 56%;  top: 44%; border-radius: 6.1% / 6.7%; z-index: 3; transform: rotate(2deg); animation-delay: 300ms; }
+@keyframes rise { from { opacity: 0; translate: 0 18px; } }
+/* Over the headline: the steward as a printed ticket that links to ethlabs.org. Two pieces of the same mint paper,
+   printed in one ink (the mint's own dark green): the body, with a dot, "STEWARDED BY" in small mono
+   capitals and the Ethlabs wordmark, and a stub with the arrow. Each piece has punched corners (a mask of four corner
+   cut-outs, each layer a quarter of the piece), so where the two meet the cut-outs form the ticket's notches, and a
+   dashed perforation runs between them. The masks sit on the pieces and the shadow on the link: a mask would also cut
+   away a shadow drawn on its own element, while a drop-shadow on the parent follows the cut shape. On hover the
+   ticket lifts off a mint copy of itself and the stub tears a little. */
+.hero-steward {
+  --tk-paper: color-mix(in srgb, var(--tint-mint-ink) 12%, var(--bg));
+  --tk-ink: var(--tint-mint-ink);
+  --tk-cut: 6px;
+  display: inline-flex; align-items: stretch;
+  margin: 0 0 var(--s-6);
+  line-height: 1; text-decoration: none !important;
+  filter:
+    drop-shadow(0 1px 1px rgba(16, 18, 22, .07))
+    drop-shadow(0 8px 14px color-mix(in srgb, var(--tint-mint-ink) 14%, transparent));
+  transition: translate var(--d-2) var(--ease), filter var(--d-2) var(--ease);
+}
+.hero-steward::after { display: none !important; }   /* vocs' external-link arrow */
+.hero-steward:hover {
+  translate: -2px -2px;
+  filter: drop-shadow(3px 3px 0 var(--tk-ink)) drop-shadow(0 8px 14px transparent);
+}
+.hero-steward:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.tk {
+  --tk-hole: #0000 var(--tk-cut), #000 calc(var(--tk-cut) + .5px);
+  display: inline-flex; align-items: center; height: 34px;
+  /* A wash of the paper over the grain: the ticket is small, so the full-strength grain would read as noise. */
+  background: linear-gradient(color-mix(in srgb, var(--tk-paper) 55%, transparent) 0 0), var(--grain), var(--tk-paper);
+  color: var(--tk-ink);
+  -webkit-mask-image:
+    radial-gradient(circle at 0 0, var(--tk-hole)), radial-gradient(circle at 100% 0, var(--tk-hole)),
+    radial-gradient(circle at 0 100%, var(--tk-hole)), radial-gradient(circle at 100% 100%, var(--tk-hole));
+  mask-image:
+    radial-gradient(circle at 0 0, var(--tk-hole)), radial-gradient(circle at 100% 0, var(--tk-hole)),
+    radial-gradient(circle at 0 100%, var(--tk-hole)), radial-gradient(circle at 100% 100%, var(--tk-hole));
+  -webkit-mask-position: 0 0, 100% 0, 0 100%, 100% 100%;
+  mask-position: 0 0, 100% 0, 0 100%, 100% 100%;
+  -webkit-mask-size: 51% 51%; mask-size: 51% 51%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+.tk-body { gap: 10px; padding: 0 16px 0 15px; }
+.tk-stub {
+  padding: 0 12px 0 11px;
+  border-left: 1.5px dashed color-mix(in srgb, var(--tk-ink) 45%, transparent);
+  transform-origin: 0 100%;
+  transition: rotate var(--d-2) var(--ease), translate var(--d-2) var(--ease);
+}
+.hero-steward:hover .tk-stub { rotate: 6deg; translate: 2px 0; }
+.steward-by {
+  font-family: var(--vocs-font-family-mono); font-size: 10.5px; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--tk-ink) 78%, var(--tk-paper));
+}
+.steward-dot {
+  position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--tk-ink);
+}
+.hero-steward .ethlabs-logo { height: 14px; color: var(--tk-ink); }
+.steward-arrow { flex: none; width: 14px; height: 14px; color: var(--tk-ink); }
+.ethlabs-logo { display: block; height: 18px; width: auto; }
+
+/* ---- Acknowledgements, at the foot of the page under the closing band: a small section that runs the full width of the screen between two
+   hairlines. A centred title, the two standards everything rests on as a fixed row, then a thin
+   band with the rest that slides left forever. The fixed row uses the band's item and stacks on phones. Each standard is a column of two lines (name and number, then the
+   authors), set apart by space alone. The list is drawn twice and the track moves by exactly one copy, so the loop
+   has no seam. The edges fade out. Hover pauses it; reduced motion stops it and lets the band scroll by hand. ---- */
+.credits {
+  width: 100vw; margin-left: calc(50% - 50vw); padding: var(--s-7) 0;
+  border-block: 1px solid var(--hair);
+}
+.credits-head { max-width: 52em; margin: 0 auto var(--s-5); padding: 0 var(--s-4); text-align: center; }
+.credits-head h2 {
+  margin: 0; padding: 0; border: 0;
+  font-family: var(--hand); font-style: normal; font-weight: 600;
+  font-size: clamp(38px, 3.6vw, 50px); line-height: 1; letter-spacing: 0; color: var(--ink);
+}
+.credits-head p { margin: var(--s-3) 0 0; font-size: var(--t-4); line-height: 1.6; color: var(--ink-2); text-wrap: pretty; }
+.credits-band {
+  position: relative; overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.credits-track { display: flex; width: max-content; animation: credits-slide 150s linear infinite; }
+.credits-band:hover .credits-track { animation-play-state: paused; }
+@keyframes credits-slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.credits-list { display: flex; list-style: none; margin: 0; padding: 0; }
+.credits-list li {
+  display: flex; flex-direction: column; justify-content: flex-start; gap: 2px;
+  margin: 0; padding: var(--s-3) var(--s-6);
+  white-space: nowrap;
+}
+.credits-list p { margin: 0; }
+.credits-list li > p:first-child { font-size: var(--t-3); font-weight: 600; line-height: 1.4; color: var(--ink); }
+.credits-list li > p:first-child span {
+  margin-left: var(--s-2); font-family: var(--vocs-font-family-mono); font-size: var(--t-1); font-weight: 400; color: var(--ink-3);
+}
+.credits-list li > p:last-child { font-size: var(--t-2); line-height: 1.4; color: var(--ink-3); }
+.credits-fixed { justify-content: center; margin-bottom: var(--s-6) !important; padding: 0 var(--s-4); }
+.credits-fixed li { flex: 0 1 auto; min-width: 0; white-space: normal; }
+.credits-fixed li:last-child { flex: none; }
+/* A long author list comes from the component as two lines of about equal length. */
+.credits-line { display: block; }
+@media (prefers-reduced-motion: reduce) {
+  .credits-band { overflow-x: auto; scrollbar-width: none; }
+  .credits-track { animation: none !important; }
+  .credits-list[aria-hidden] { display: none; }
+}
+
+/* ---- Why this needs to exist: two panels with the same three rows (wallets, accounts, the apps, hardware wallets
+   and explorers that support them). Nodes sit on a gapless grid with side margins, so the wires hit exact column
+   centres. The left panel's wires cross in a red-tinted tangle; the right one's run straight into the shared
+   account in the page's mint. A one-line note closes each panel. Under the panels, what goes wrong per group.
+   Motion: short pulses run down the wires, in step on the right and each on its own clock across the tangle on
+   the left. The three accounts on the left each carry a tint of their own. ---- */
+.gap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+.gap-panel {
+  display: flex; flex-direction: column; margin: 0;
+  border-radius: 16px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--hair-strong);
+}
+.gap-head {
+  display: flex; align-items: center; gap: var(--s-2); margin: 0; padding: 20px var(--s-5) 0;
+  font-size: 11px; font-weight: 600; line-height: 1.45; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.gap-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--st-bad); }
+.shared .gap-head { color: var(--tint-mint-ink); }
+.shared .gap-dot { background: var(--tint-mint-ink); }
+.gap-body { padding: var(--s-5) var(--s-4) var(--s-6); }
+.gap-row {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
+}
+.gap-node {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 44px; margin: 0 var(--s-1); padding: var(--s-2);
+  border-radius: 10px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--hair-strong);
+  font-size: var(--t-2); font-weight: 500; line-height: 1.3; text-align: center; color: var(--ink);
+}
+.gap-node.use { background: var(--surface-2); box-shadow: none; color: var(--ink-2); }
+.gap-icon { flex: none; width: 14px; height: 14px; color: var(--ink-3); }
+.gap-node.acct { background: var(--tint); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-ink) 22%, transparent); }
+.gap-node.acct .gap-glyph { stroke: var(--tint-ink); fill: color-mix(in srgb, var(--tint-ink) 18%, transparent); }
+.gap-glyph { flex: none; width: 12px; height: 12px; fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-linejoin: round; }
+.gap-shared {
+  display: flex; align-items: center; justify-content: center; gap: var(--s-2); min-height: 44px;
+  margin: 0 var(--s-1); padding: var(--s-2) var(--s-3);
+  border-radius: 10px; background: var(--tint-mint); box-shadow: inset 0 0 0 1.5px var(--tint-mint-ink);
+  font-size: var(--t-3); font-weight: 600; line-height: 1.3; text-align: center; color: var(--ink);
+}
+.gap-eth { display: block; width: auto; height: 17px; }
+:root[style*='color-scheme:dark'] .gap-eth,
+:root[style*='color-scheme: dark'] .gap-eth { filter: invert(1); }
+.gap-wires { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); height: var(--s-5); }
+.gap-wires i { position: relative; }
+.gap-wires i::before {
+  content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1.5px; margin-left: -.75px;
+  background: var(--hair-strong);
+}
+.gap-wires.dot-end i::after, .gap-wires.dot-start i::after {
+  content: ''; position: absolute; left: 50%; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%;
+  background: var(--tint-mint-ink); box-shadow: 0 0 0 3px var(--bg);
+}
+.gap-wires.dot-end i::after { bottom: -3.5px; }
+.gap-wires.dot-start i::after { top: -3.5px; }
+.gap-wires.tall, .gap-tangle-wrap { height: 72px; }
+.gap-tangle-wrap { position: relative; }
+.gap-tangle { display: block; width: 100%; height: 100%; overflow: visible; }
+.gap-tangle line { stroke: color-mix(in srgb, var(--st-bad) 45%, var(--hair-strong)); stroke-width: 1.5; }
+/* A spark per wire: a box as big as the tangle, with the dot at the wire's top end, sliding by the wire's run. */
+.gap-spark {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0;
+}
+/* The Gap's motion runs a few rounds each time the diagram comes into view (Reveal.client.tsx sets data-inview on
+   its section), then rests. Without the script there is no motion here at all. */
+[data-inview] .gap-spark { animation: gap-spark 3s linear 3; }
+[data-inview] .gap-pulse { animation: gap-pulse 2.2s linear 4; }
+.gap-spark::before {
+  content: ''; position: absolute; left: var(--x); top: 0; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%; background: var(--st-bad);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--st-bad) 60%, transparent);
+}
+@keyframes gap-spark {
+  0% { transform: translate(0, 0); opacity: 0; }
+  12% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate(var(--dx), 100%); opacity: 0; }
+}
+/* The pulse on a straight wire: a short mint bar that slides down it, all three together. */
+.gap-pulse {
+  position: absolute; left: 50%; top: 0; width: 3px; height: 14px; margin-left: -1.5px; border-radius: 2px;
+  background: var(--tint-mint-ink); opacity: 0;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--tint-mint-ink) 55%, transparent);
+}
+@keyframes gap-pulse {
+  0% { transform: translateY(4px); opacity: 0; }
+  12% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(56px); opacity: 0; }
+}
+.gap-note {
+  margin: auto 0 0; padding: var(--s-4) var(--s-5) 20px; border-top: 1px solid var(--hair);
+  font-size: var(--t-3); font-weight: 500; line-height: 1.5; color: var(--ink);
+}
+
+/* App builders, today and with PACE (Paths). The Gap's two panels with a list in each. On the left every kind of
+   account hangs off a forked line in the Gap's red, one branch per path. On the right every step sits on one mint
+   line, the single path. */
+.paths-list { position: relative; list-style: none; margin: 0; padding: 0 var(--s-2); display: grid; gap: var(--s-4); }
+.paths-list li { position: relative; margin: 0; padding-left: 26px; }
+.paths-list p { margin: 0; }
+.paths-label { font-size: var(--t-3); font-weight: 600; line-height: 1.4; color: var(--ink); }
+.paths-detail { margin-top: 2px !important; font-size: var(--t-2); line-height: 1.5; color: var(--ink-2); }
+.paths-detail code { font-size: .92em; }
+/* Each item draws its own piece of the line, so the fork ends at the last branch and the path at the last dot. */
+.split .paths-list li::before {
+  content: ''; position: absolute; left: 4px; top: 10px; width: 14px; height: 1.5px;
+  background: color-mix(in srgb, var(--st-bad) 45%, var(--hair-strong));
+}
+.split .paths-list li::after {
+  content: ''; position: absolute; left: 4px; top: 0; bottom: calc(-1 * var(--s-4)); width: 1.5px;
+  background: color-mix(in srgb, var(--st-bad) 45%, var(--hair-strong));
+}
+.split .paths-list li:first-child::after { top: 4px; }
+.split .paths-list li:last-child::after { bottom: auto; height: 11.5px; }
+.shared .paths-list li::before {
+  content: ''; position: absolute; z-index: 1; left: 0; top: 5px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--tint-mint-ink); box-shadow: 0 0 0 3px var(--bg);
+}
+.shared .paths-list li::after {
+  content: ''; position: absolute; left: 4px; top: 10px; bottom: calc(-1 * (var(--s-4) + 10px)); width: 2px;
+  background: var(--tint-mint-ink);
+}
+.shared .paths-list li:last-child::after { display: none; }
+
+.risks {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-7);
+}
+.risks li { margin: 0; padding: var(--s-5) 0 var(--s-4); border-top: 1px solid var(--hair); }
+.risk-who {
+  display: flex; align-items: center; gap: var(--s-2); margin: 0 0 var(--s-2);
+  font-size: 11px; font-weight: 600; line-height: 1.45; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.risk-icon { flex: none; width: 15px; height: 15px; color: var(--st-bad); }
+.risks h3 {
+  margin: 0 0 var(--s-2); padding: 0; border: 0;
+  font-size: var(--t-5); font-weight: 600; line-height: 1.35; letter-spacing: -.012em; color: var(--ink);
+}
+.risks li > p:last-child { margin: 0; font-size: var(--t-3); line-height: 1.55; color: var(--ink-2); }
+
+/* The work sheet: a drawing sheet like the roadmap's, with a strip on top for the title and the legend, then one
+   ruled layer per place the change lands. A layer is a label column (the layer's name in small caps, a caption in
+   the blue pencil hand) and a row of cells. Every layer has as many cell columns as the longest one (--cols, at
+   least three), so a shorter layer leaves its last columns empty and the cells line up down the sheet like a table. A cell opens with its title behind a small
+   dot, the same one the legend uses: filled mint for work we build, a blue ring for work another team ships. Then
+   an optional handwritten status line, then who makes the change in small mono, pinned to the bottom of the cell. */
+.work-sheet {
+  --ball: 11px;
+  position: relative; margin: 0; padding: var(--s-4) var(--s-6) var(--s-6);
+  container-type: inline-size;
+}
+.work-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-5);
+  margin: 0 calc(-1 * var(--s-6)) var(--s-6); padding: 0 var(--s-6) var(--s-4);
+  border-bottom: 1px solid var(--hair);
+  font: 500 10.5px/1.3 var(--vocs-font-family-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+}
+.work-key { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); }
+.work-key span { display: inline-flex; align-items: center; gap: 7px; }
+.work-key span::before { content: ''; width: 11px; height: 11px; border-radius: 50%; }
+.work-key .ours::before { background: var(--tint-mint-ink); }
+.work-key .push::before { box-shadow: inset 0 0 0 1.5px var(--bp-ink, var(--hair-strong)); }
+.work-layers { display: grid; gap: var(--s-4); }
+.work-band {
+  display: grid; grid-template-columns: 168px minmax(0, 1fr);
+  border-radius: 14px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--hair-strong);
+}
+.work-label {
+  margin: 1px 0 1px 1px; padding: var(--s-4);
+  border-radius: 13px 0 0 13px; background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+.work-label p { margin: 0; }
+.work-name { font-size: 11px; font-weight: 600; line-height: 1.45; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.work-caption {
+  margin-top: var(--s-2) !important; font-family: var(--hand); font-size: 19px; font-weight: 500; line-height: 1.05;
+  color: var(--bp-ink, var(--ink-3)); rotate: -1.5deg; transform-origin: 0 50%;
+}
+.work-cells {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+}
+.work-cells li {
+  margin: 0; min-width: 0; display: flex; flex-direction: column;
+  padding: var(--s-4) var(--s-4) var(--s-4); border-left: 1px solid var(--hair);
+}
+/* The dot sits in front of the title, centred on its first line. */
+.work-ball {
+  position: relative; display: block; flex: none; width: var(--ball); height: var(--ball); border-radius: 50%;
+  margin-top: calc((1.35em - var(--ball)) / 2);
+}
+.work-cells li.ours .work-ball { background: var(--tint-mint-ink); }
+.work-cells li.push .work-ball::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  border: 1.5px solid var(--bp-ink, var(--hair-strong));
+}
+.work-cells h3 {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin: 0 0 var(--s-1); padding: 0; border: 0;
+  font-size: var(--t-4); font-weight: 600; line-height: 1.35; letter-spacing: -.008em; color: var(--ink); text-wrap: balance;
+}
+.work-cells p { margin: 0; }
+.work-hand {
+  margin-top: var(--s-2) !important; font-family: var(--hand); font-size: 20px; font-weight: 500; line-height: 1.05;
+  color: var(--bp-ink, var(--ink-3)); rotate: -1.5deg; transform-origin: 0 50%;
+}
+.work-who {
+  margin-top: auto !important; padding-top: var(--s-3);
+  font: 500 11px/1.4 var(--vocs-font-family-mono); color: var(--ink-3);
+}
+/* A narrow sheet stacks each layer: the label on top, one cell per row under it. */
+@container (max-width: 760px) {
+  .work-band { grid-template-columns: minmax(0, 1fr); }
+  .work-label { margin: 1px 1px 0; border-radius: 13px 13px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-3); }
+  .work-caption { margin-top: 0 !important; }
+  .work-cells { grid-template-columns: minmax(0, 1fr); }
+  .work-cells li { border-left: 0; border-top: 1px solid var(--hair); }
+  .work-cells li:first-child { border-top: 0; }
+}
+@container (min-width: 761px) and (max-width: 1000px) {
+  .work-band { grid-template-columns: 132px minmax(0, 1fr); }
+  .work-cells li { padding-inline: var(--s-3); }
+}
+
+
+/* ---- What users get. A short intro section, then one compact section per theme: the rail holds the theme's icon,
+   name and gist, the body a row of four features, each a demo screen on the theme's tinted plate with a name and a
+   line or two. The sections are short on purpose, so two fit on a laptop screen. What a wallet can add uses the same
+   rows in an ordinary section, two rows of four. Phones and browser captures rise out of the plate and are cropped
+   at its bottom; the hardware wallet sits whole, as wide as the plate allows. On phones the row becomes a swipeable
+   strip, so a section stays one screen tall. ---- */
+.sec.intro { padding-bottom: var(--s-7); }
+.sec.theme { padding: var(--s-6) 0 var(--s-7); }
+/* The rail scrolls with its row. Only the page's real section headings (.sec > h2) stick. */
+.sec-rail { grid-column: 1; align-self: start; }
+.sec-rail > * { margin-top: 0; margin-bottom: 0; }
+.sec-rail h2 {
+  margin: var(--s-4) 0 0; padding: 0; border: 0;
+  font-size: var(--t-6); font-weight: 600; line-height: 1.25; letter-spacing: -.015em;
+  color: var(--ink); text-wrap: balance;
+}
+.sec-rail p { margin-top: var(--s-3); font-size: var(--t-3); line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
+.theme-icon {
+  display: grid; place-items: center; width: 40px; height: 40px;
+  border-radius: 12px; background: var(--tint); color: var(--tint-ink);
+}
+.theme-icon svg { width: 20px; height: 20px; }
+.showcase { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-5) var(--s-4); }
+.sc { margin: 0; min-width: 0; }
+.sc-plate {
+  display: block; position: relative; height: 240px; overflow: hidden;
+  border-radius: 14px; background: var(--tint); text-decoration: none !important;
+}
+.sc-plate::after { display: none !important; }
+.sc-plate:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.sc-plate img { position: absolute; left: 50%; display: block; height: auto; box-shadow: var(--lift); transition: transform 300ms var(--ease); }
+.sc-phone img { top: 22px; width: 70%; max-width: 200px; transform: translateX(-50%); border-radius: 10.8% / 5.2%; }
+.sc-browser img { top: 22px; width: 86%; transform: translateX(-50%); border-radius: 8px; }
+.sc-phone:hover img, .sc-browser:hover img { transform: translate(-50%, -6px); }
+.sc-hw img { top: 50%; width: 94%; transform: translate(-50%, -50%); border-radius: 6.1% / 6.7%; }
+.sc-hw:hover img { transform: translate(-50%, calc(-50% - 6px)); }
+.sc h3 {
+  margin: var(--s-4) 0 var(--s-1); padding: 0; border: 0;
+  font-size: var(--t-4); font-weight: 600; line-height: 1.35; letter-spacing: -.008em; color: var(--ink);
+}
+.sc p { margin: 0; font-size: var(--t-3); line-height: 1.5; color: var(--ink-2); }
+
+/* ---- The eras under Why this needs to exist: three attempts on one dashed rail, the open one tinted. ---- */
+.eras {
+  list-style: none; margin: 0; padding: 0; position: relative;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3);
+}
+.eras::before { content: ''; position: absolute; top: 0; left: var(--s-6); right: var(--s-6); border-top: 1.5px dashed var(--hair-strong); }
+.era {
+  position: relative; margin: 0; padding: var(--s-6) var(--s-5) var(--s-5);
+  border-radius: 16px; box-shadow: inset 0 0 0 1px var(--hair-strong); background: var(--bg);
+}
+.era-dot {
+  position: absolute; top: -6px; left: var(--s-5); width: 12px; height: 12px; border-radius: 50%;
+  background: var(--ink-3); box-shadow: 0 0 0 4px var(--bg);
+}
+.era-when {
+  display: flex; align-items: baseline; gap: var(--s-2); margin: 0 0 var(--s-3);
+  font-family: var(--vocs-font-family-mono); font-size: var(--t-1); color: var(--ink-3);
+}
+.era-when span { color: var(--ink-2); }
+.era-when em {
+  margin-left: auto; padding: 2px 8px; border-radius: 999px; background: var(--bg);
+  font-family: var(--vocs-font-family); font-style: normal; font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--tint-mint-ink);
+}
+.era h3 {
+  margin: 0 0 var(--s-2); padding: 0; border: 0;
+  font-size: var(--t-5); font-weight: 600; line-height: 1.3; letter-spacing: -.012em; color: var(--ink);
+}
+.era > p:last-child { margin: 0; font-size: var(--t-3); line-height: 1.55; color: var(--ink-2); }
+.era.current { background: var(--tint-mint); box-shadow: inset 0 0 0 1.5px var(--tint-mint-ink); }
+.era.current .era-dot {
+  background: var(--tint-mint-ink);
+  box-shadow: 0 0 0 4px var(--bg), 0 0 0 7px color-mix(in srgb, var(--tint-mint-ink) 28%, transparent);
+}
+
+/* ---- The road to Hegotá: a detail on a drawing sheet. One rail across, a numbered balloon per milestone, and each
+   milestone's text on a leader line, above and below the rail in turn. The grid has one column more than there are
+   steps: step i starts on column line i + 1 and its text spans two columns, so two texts on the same side never
+   meet. The rail is the list's own ::before, placed in the middle row from the first balloon to the last, so it is
+   one line and can be drawn by hand in one go (Sketch layer). Colours for the steps still ahead are in the
+   Blueprint layer. ---- */
+.road-sheet {
+  --lead: 40px;   /* leader length, from the rail to the nearest text */
+  --ball: 28px;   /* balloon size */
+  position: relative; margin: 0; padding: var(--s-4) var(--s-6) var(--s-7);
+  container-type: inline-size;
+}
+.road-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-5);
+  margin: 0 calc(-1 * var(--s-6)) var(--s-7); padding: 0 var(--s-6) var(--s-4);
+  border-bottom: 1px solid var(--hair);
+  font: 500 10.5px/1.3 var(--vocs-font-family-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+}
+.road-key { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); }
+.road-key span { display: inline-flex; align-items: center; gap: 7px; }
+.road-key span::before { content: ''; width: 11px; height: 11px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--hair-strong); }
+.road-key .done::before { background: var(--tint-mint-ink); box-shadow: none; }
+.road-key .now::before { box-shadow: inset 0 0 0 3px var(--st-wait); }
+
+.road {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(var(--cols, 7), minmax(0, 1fr));
+  grid-template-rows: auto 2px auto; row-gap: var(--lead);
+}
+.road::before {
+  content: ''; grid-row: 2; grid-column: 1 / var(--n, 6);
+  background: linear-gradient(90deg, var(--tint-mint-ink) calc(var(--reached, 0) / (var(--n, 6) - 1) * 100%), var(--hair-strong) 0);
+}
+.road-step { position: relative; grid-column: var(--col) / span 2; margin: 0; padding: 0 var(--s-5) 0 var(--s-4); }
+.road-step.above { grid-row: 1; align-self: end; }
+.road-step.below { grid-row: 3; align-self: start; }
+/* The leader runs from the balloon along the text's left edge and ends in a small dot. */
+.road-step::before { content: ''; position: absolute; left: 0; width: 1px; background: var(--sk-ink, var(--hair-strong)); }
+.road-step.above::before { top: 4px; bottom: calc(-1 * var(--lead) - 1px); }
+.road-step.below::before { top: calc(-1 * var(--lead) - 1px); bottom: 4px; }
+.road-step::after { content: ''; position: absolute; left: -2px; width: 5px; height: 5px; border-radius: 50%; background: var(--sk-ink, var(--hair-strong)); }
+.road-step.above::after { top: 2px; }
+.road-step.below::after { bottom: 2px; }
+/* The balloon sits on the rail: centred on the leader, a lead length past the text. */
+.road-dot {
+  position: absolute; left: calc(var(--ball) / -2); z-index: 1;
+  display: grid; place-items: center; width: var(--ball); height: var(--ball); border-radius: 50%;
+  background: var(--bg); color: var(--ink-3);
+  font: 600 12px/1 var(--vocs-font-family-mono);
+}
+.road-step.above .road-dot { top: calc(100% + var(--lead) + 1px - var(--ball) / 2); }
+.road-step.below .road-dot { bottom: calc(100% + var(--lead) + 1px - var(--ball) / 2); }
+.road-dot::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--hair-strong); }
+.road-step.done .road-dot { background: var(--tint-mint-ink); color: var(--bg); }
+.road-step.done .road-dot::before { border-color: var(--tint-mint-ink); }
+.road-step.now .road-dot { color: var(--st-wait); }
+.road-step.now .road-dot::before { border: 3px solid var(--st-wait); }
+.road-when { margin: 0 0 var(--s-1); font-family: var(--vocs-font-family-mono); font-size: var(--t-1); color: var(--ink-3); }
+.road-step.done .road-when { color: var(--tint-mint-ink); }
+.road-step.now .road-when { color: var(--st-wait); }
+.road-step h3 {
+  margin: 0 0 var(--s-1); padding: 0; border: 0;
+  font-size: var(--t-4); font-weight: 600; line-height: 1.35; letter-spacing: -.008em; color: var(--ink);
+}
+.road-step > p:last-child { margin: 0; font-size: var(--t-3); line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }
+
+/* A narrow sheet has no room for two columns per step: the rail turns vertical, balloons down the left and the
+   text beside them. Each step draws the rail segment down to the next balloon, so the list's own rail goes. */
+@container (max-width: 820px) {
+  .road { display: block; }
+  .road::before { display: none; }
+  .road-step { padding: 0 0 var(--s-6) calc(var(--ball) + var(--s-4)); }
+  .road-step:last-child { padding-bottom: 0; }
+  .road-step:is(.above, .below) .road-dot { top: -5px; bottom: auto; left: 0; }
+  .road-step:is(.above, .below)::before {
+    top: calc(var(--ball) - 5px); bottom: 5px; left: calc(var(--ball) / 2 - 1px); width: 2px;
+    background: var(--hair-strong);
+  }
+  .road-step.done::before { background: var(--tint-mint-ink); }
+  .road-step:last-child::before, .road-step::after { display: none; }
+}
+
+/* ---- The closing band: the page's one inverted block, so the ask is the last thing the eye lands on. ---- */
+.closer {
+  position: relative; overflow: hidden;
+  margin: 0 0 var(--s-8); padding: var(--s-8) var(--s-7);
+  border-radius: 20px; background: var(--ink); color: var(--bg);
+}
+.closer > * { position: relative; }
+.closer > p { margin: 0 0 var(--s-6); max-width: 36em; font-size: var(--t-5); line-height: 1.55; color: color-mix(in srgb, var(--bg) 74%, var(--ink)); }
+.closer > p:first-child {
+  margin-bottom: var(--s-4); max-width: 18em;
+  font-size: clamp(30px, 3vw, 42px); font-weight: 600; line-height: 1.08; letter-spacing: -.03em; color: var(--bg);
+}
+.closer .cta { margin: 0; }
+.closer .btn { background: var(--bg); color: var(--ink) !important; }
+.closer .btn:hover { background: color-mix(in srgb, var(--bg) 88%, var(--ink)); }
+.closer .btn.ghost { background: transparent; color: var(--bg) !important; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bg) 35%, transparent); }
+.closer .btn.ghost:hover { background: color-mix(in srgb, var(--bg) 10%, transparent); }
+
+/* ---- Sections. A hairline across the full width, the heading in the rail, the body on the right. The heading
+   sticks while its section scrolls, so a long section like "What it is" keeps its label in view.
+   The h2 sits inside a <section>. vocs' own `article > * + h2` rule (a top border and an !important 40px
+   margin) only matches an h2 that is a direct child of the article, so it never applies here. ---- */
+/* The rule over each section is a pseudo-element, so it can draw across when the section arrives (Print touches). */
+.sec {
+  position: relative;
+  display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); column-gap: var(--rail-gap);
+  margin: 0; padding: var(--s-7) 0 var(--s-9);
+}
+.sec::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: var(--hair); transform-origin: 0 50%;
+}
+.sec > h2 {
+  grid-column: 1; align-self: start;
+  position: sticky; top: calc(var(--vocs-spacing-topNav) + var(--s-6));
+  margin: 0; padding: 0; border: 0;
+  font-size: var(--t-6); font-weight: 500; line-height: 1.3; letter-spacing: -.012em;
+  color: var(--ink); text-wrap: balance;
+}
+.sec-body { grid-column: 2; min-width: 0; }
+.sec-body > * { margin-top: 0; margin-bottom: 0; }
+.sec-body > * + * { margin-top: var(--s-6); }
+
+/* A wide section drops the rail: the heading sits on top and scrolls with the page, and the body takes the full
+   content width. For content that needs the room, like the roadmap's six columns. */
+.sec.wide { grid-template-columns: minmax(0, 1fr); }
+.sec.wide > h2 { position: static; margin-bottom: var(--s-5); font-size: var(--t-7); }
+.sec.wide .sec-body { grid-column: 1; }
+
+/* Prose inside a section: its own measure, a size up from the docs body. */
+.sec .lead-col { max-width: 640px; }
+.sec .lead-col p, .sec .lead-col li { font-size: var(--t-5); line-height: 1.65; color: var(--ink); }
+.sec .lead-col p { margin: 0; }
+.sec .lead-col p + p { margin-top: var(--s-4); }
+/* "What it's for": one block per question, a small heading over a sentence and a list of examples. */
+.sec .why h3 { margin: 0 0 var(--s-2); padding: 0; border: 0; font-size: var(--t-5); font-weight: 600; letter-spacing: -.01em; line-height: 1.4; color: var(--ink); }
+.sec .why ul { margin: var(--s-3) 0 0; }
+.sec .why li + li { margin-top: var(--s-1); }
+
+/* ---- Goals: a ruled two-column grid. Each cell is a link; the arrow sits at the end of the title. ---- */
+.features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-7); }
+a.feature {
+  display: flex; flex-direction: column;
+  padding: var(--s-5) 0 var(--s-6); border-top: 1px solid var(--hair);
+  text-decoration: none !important; color: inherit !important;
+}
+a.feature::after { display: none !important; }
+a.feature:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.feature h3 {
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-4);
+  font-size: var(--t-5); font-weight: 600; letter-spacing: -.01em; line-height: 1.35;
+  margin: 0 0 var(--s-2); padding: 0; border: 0; color: var(--ink);
+  transition: color var(--d-1) var(--ease);
+}
+.feature h3 svg {
+  width: 16px; height: 16px; flex: none; align-self: center; color: var(--ink-3);
+  transition: transform var(--d-2) var(--ease), color var(--d-1) var(--ease);
+}
+a.feature:hover h3 { color: var(--accent); }
+a.feature:hover h3 svg { color: var(--accent); transform: translateX(3px); }
+.feature p { font-size: var(--t-4); line-height: 1.6; color: var(--ink-2); margin: 0; }
+.feature-id {
+  margin-top: auto; padding-top: var(--s-4);
+  font-family: var(--vocs-font-family-mono); font-size: var(--t-1); letter-spacing: 0; color: var(--ink-3);
+}
+
+/* ---- Anatomy: the ten things one transaction does, split at the moment it leaves the wallet. Two columns
+   under labelled rules; each step a row with its number in the gutter. ---- */
+.anat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-7) var(--s-7); }
+.anat-phase { padding-top: var(--s-3); border-top: 1px solid var(--rule); }
+.anat-phase h3 {
+  margin: 0 0 var(--s-1); padding: 0; border: 0;
+  font-size: var(--t-3); font-weight: 600; letter-spacing: 0; line-height: 1.4; text-transform: none; color: var(--ink);
+}
+.anat-note { margin: 0 0 var(--s-4); font-size: var(--t-3); line-height: 1.55; color: var(--ink-3); max-width: 34em; }
+.anat-list { list-style: none; margin: 0; padding: 0; }
+/* The number sits in a 40px gutter so both columns' titles start on one line. */
+.anat-step { position: relative; margin: 0; padding: var(--s-4) 0 var(--s-4) 40px; border-top: 1px solid var(--hair); }
+.anat-n {
+  position: absolute; left: 0; top: var(--s-4);
+  font-family: var(--vocs-font-family-mono); font-size: var(--t-2); line-height: 24px; color: var(--ink-3);
+}
+.anat-step h4 {
+  margin: 0 0 var(--s-1); padding: 0; border: 0;
+  font-size: var(--t-4); font-weight: 600; letter-spacing: -.005em; line-height: 24px; color: var(--ink);
+}
+.anat-step p { margin: 0; font-size: var(--t-3); line-height: 1.6; color: var(--ink-2); }
+.anat-tag {
+  display: block; margin-top: var(--s-2);
+  font-family: var(--vocs-font-family-mono); font-size: var(--t-1); letter-spacing: 0; color: var(--ink-3);
+}
+
+/* ---- Deliverables: a ruled two-column list ---- */
+.deliver ul {
+  list-style: none; padding: 0; margin: 0;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-7);
+}
+.deliver li {
+  margin: 0; padding: var(--s-4) 0 var(--s-5); border-top: 1px solid var(--hair);
+  font-size: var(--t-4); line-height: 1.6; color: var(--ink-2);
+}
+
+/* =================================================================================================================
+   Screenshots (landing and docs)
+   ================================================================================================================= */
+figure.shot { margin: var(--s-2) 0 var(--s-6); }
+figure.shot .shot-zoom {
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: 0; background: none; border-radius: 0; box-shadow: none;
+  text-decoration: none !important;
+}
+figure.shot .shot-zoom::after { display: none !important; }
+figure.shot img { width: 100%; height: auto; display: block; }
+figure.shot .shot-zoom:focus-visible { outline: 2px solid var(--accent); outline-offset: var(--s-2); border-radius: var(--r-3); }
+figure.shot.shot-phone img { max-width: 300px; border-radius: 10.8% / 5.2%; box-shadow: var(--drop); }
+figure.shot.shot-browser img { max-width: 100%; border-radius: var(--r-3); box-shadow: 0 0 0 1px var(--hair), var(--drop); }
+figure.shot.shot-hw img { max-width: 360px; border-radius: 6.1% / 6.7%; box-shadow: var(--drop); }
+figure.shot figcaption {
+  font-size: var(--t-3); line-height: 1.5; color: var(--ink-3);
+  margin-top: var(--s-3); max-width: 600px;
+}
+/* A single centred capture gets a centred caption block, so the caption is not left hanging under the image. */
+figure.shot.shot-phone, figure.shot.shot-hw { display: flex; flex-direction: column; align-items: center; }
+figure.shot.shot-phone figcaption, figure.shot.shot-hw figcaption { align-self: center; text-align: center; }
+
+.row {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: var(--s-6); padding: 0; background: none; border-radius: 0; box-shadow: none;
+  margin: var(--s-4) 0 var(--s-6);
+}
+.row figure.shot { margin: 0; flex: 0 1 auto; min-width: 0; }
+.row figure.shot.shot-phone { flex-basis: 260px; max-width: 260px; }
+.row figure.shot.shot-browser { flex: 1 1 340px; max-width: 520px; }
+.row figure.shot.shot-hw { flex-basis: 300px; max-width: 300px; }
+
+.shot-n {
+  font-family: var(--vocs-font-family-mono); font-size: var(--t-1); color: var(--ink-3);
+  margin-right: var(--s-2);
+}
+
+/* =================================================================================================================
+   Docs components
+   ================================================================================================================= */
+
+/* ---- Charts: a dated timeline (SVG) and horizontal bars (HTML) ---- */
+.chart { margin: var(--s-4) 0 var(--s-6); }
+.chart-title {
+  font-size: var(--t-3); font-weight: 600; color: var(--ink);
+  margin: 0; padding: var(--s-3) 0; border-top: 1px solid var(--rule);
+}
+.chart-note { font-size: var(--t-2); line-height: 1.5; color: var(--ink-3); margin: var(--s-3) 0 0; }
+.timeline {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+  padding: var(--s-2) 0;
+  scrollbar-width: thin; scrollbar-color: var(--hair-strong) transparent;
+}
+.timeline svg { display: block; width: 100%; min-width: 720px; height: auto; font-family: var(--vocs-font-family); }
+.timeline .axis { stroke: var(--hair-strong); stroke-width: 1.5; }
+.timeline .axis-future { stroke: var(--hair-strong); stroke-width: 1.5; stroke-dasharray: 4 6; }
+.timeline .tick { stroke: var(--hair-strong); }
+.timeline .year { fill: var(--ink-3); font-size: var(--t-1); font-weight: 500; }
+.timeline .dot { fill: var(--ink); stroke: var(--bg); stroke-width: 3; }
+.timeline .dot.fork { fill: var(--st-info); }
+.timeline .dot.next { fill: var(--bg); stroke: var(--ink); stroke-width: 2; }
+.timeline .dot.today { fill: var(--st-wait); }
+.timeline .stem { stroke: var(--hair-strong); stroke-width: 1; }
+.timeline .label { fill: var(--ink); font-size: var(--t-2); font-weight: 600; }
+.timeline .date { fill: var(--ink-3); font-size: var(--t-1); }
+.bars {
+  display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content;
+  gap: var(--s-3) var(--s-4); align-items: center;
+  padding: var(--s-4) 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+  font-size: var(--t-3);
+}
+.bars .bar-label { color: var(--ink); font-weight: 500; white-space: nowrap; }
+.bars .bar-track { height: 10px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+.bars .bar-fill { display: block; height: 100%; border-radius: 2px; background: var(--ink); min-width: 3px; }   /* a span: without display: block its width is ignored and the bar draws at zero */
+.bars .bar-fill.soft { background: var(--hair-strong); }
+.bars .bar-value {
+  color: var(--ink-2); white-space: nowrap;
+  font-variant-numeric: tabular-nums; font-family: var(--vocs-font-family-mono); font-size: var(--t-1);
+  text-align: right;
+}
+.bars .bar-sub { grid-column: 1 / -1; font-size: var(--t-1); color: var(--ink-3); margin: -6px 0 2px; }
+/* The Bars rows are a list laid out into the parent grid, so the list's own box model has to go. */
+ul.bars { list-style: none; margin: 0; }
+ul.bars > li { margin: 0; }
+
+/* ---- Mermaid. vocs initialises Mermaid with its default theme (lilac boxes, yellow notes) and exposes no option
+   for it, so the diagram is re-coloured here: white nodes, grey strokes, ink text, in both themes. Mermaid scopes
+   its own rules under the SVG's id, so these need !important to win. ---- */
+[data-v-mermaid] {
+  display: flex; justify-content: center; overflow-x: auto;
+  padding: var(--s-5) 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+}
+[data-v-mermaid] svg { font-family: var(--vocs-font-family) !important; }
+[data-v-mermaid] .node rect, [data-v-mermaid] .node polygon, [data-v-mermaid] .node ellipse, [data-v-mermaid] .node path,
+[data-v-mermaid] .node circle:not(.state-start):not(.state-end),
+[data-v-mermaid] rect.actor, [data-v-mermaid] .actor, [data-v-mermaid] .labelBox,
+[data-v-mermaid] .statediagram-state rect, [data-v-mermaid] g.stateGroup rect {
+  fill: var(--bg) !important; stroke: var(--ink-3) !important; stroke-width: 1px !important;
+}
+[data-v-mermaid] .nodeLabel, [data-v-mermaid] .label, [data-v-mermaid] .label text, [data-v-mermaid] .edgeLabel,
+[data-v-mermaid] .edgeLabel p, [data-v-mermaid] text.actor, [data-v-mermaid] text.actor > tspan,
+[data-v-mermaid] .messageText, [data-v-mermaid] .noteText, [data-v-mermaid] .noteText > tspan,
+[data-v-mermaid] .loopText, [data-v-mermaid] .loopText > tspan, [data-v-mermaid] .labelText,
+[data-v-mermaid] .labelText > tspan, [data-v-mermaid] .stateLabel text, [data-v-mermaid] g.stateGroup text {
+  fill: var(--ink) !important; color: var(--ink) !important;
+}
+[data-v-mermaid] .flowchart-link, [data-v-mermaid] .edgePath .path, [data-v-mermaid] .messageLine0,
+[data-v-mermaid] .messageLine1, [data-v-mermaid] .transition, [data-v-mermaid] .relation, [data-v-mermaid] .loopLine {
+  stroke: var(--ink-3) !important;
+}
+[data-v-mermaid] .actor-line { stroke: var(--hair-strong) !important; }
+[data-v-mermaid] marker path, [data-v-mermaid] .arrowheadPath, [data-v-mermaid] .arrowMarkerPath {
+  fill: var(--ink-3) !important; stroke: var(--ink-3) !important;
+}
+[data-v-mermaid] .edgeLabel, [data-v-mermaid] .edgeLabel *, [data-v-mermaid] .edgeLabel rect, [data-v-mermaid] .labelBkg {
+  background-color: var(--bg) !important; fill: var(--bg) !important;
+}
+[data-v-mermaid] .note { fill: var(--surface-2) !important; stroke: var(--hair-strong) !important; }
+[data-v-mermaid] .activation0, [data-v-mermaid] .activation1, [data-v-mermaid] .activation2 {
+  fill: var(--surface-2) !important; stroke: var(--ink-3) !important;
+}
+[data-v-mermaid] .cluster rect { fill: var(--surface-2) !important; stroke: var(--hair-strong) !important; }
+[data-v-mermaid] .state-start, [data-v-mermaid] .state-end, [data-v-mermaid] circle.state-start {
+  fill: var(--ink) !important; stroke: var(--ink) !important;
+}
+
+/* ---- vocs :::benchmarks. Its heat map mixes the palette's pure red and green into the cells, which reads as an
+   alarm. A brick and a sage keep the direction readable at a lower pitch. ---- */
+div[data-v-benchmarks] { --vocs-color-red: #A65A48; --vocs-color-green: #3F8A67; }
+:root[style*='color-scheme:dark'] div[data-v-benchmarks],
+:root[style*='color-scheme: dark'] div[data-v-benchmarks] { --vocs-color-red: #C27566; --vocs-color-green: #5FA886; }
+
+/* ---- vocs <Card>: no tinted ground, and the icon without its box. vocs 2 gives a card no data attribute, so
+   this matches its utility classes; if an upgrade renames them the default card comes back, nothing breaks. ---- */
+article a[class*='bg-surfaceTint/70'] {
+  background: transparent; border-color: var(--hair-strong); border-radius: var(--r-2);
+  transition: border-color var(--d-1) var(--ease), background-color var(--d-1) var(--ease);
+}
+article a[class*='bg-surfaceTint/70']:hover { background: var(--surface-2); border-color: var(--hair-strong); }
+article a[class*='bg-surfaceTint/70'] > div:first-child {
+  width: auto; height: auto; justify-content: flex-start;
+  border: 0; background: none; color: var(--ink-3); font-size: var(--t-5);
+}
+
+/* ---- Footer ---- */
+.foot {
+  border-top: 1px solid var(--hair);
+  margin-top: var(--s-6);
+  padding: var(--s-7) 0 var(--s-5);
+  display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr));
+  gap: var(--s-5) var(--s-6);
+}
+/* On the landing page the footer follows the page grid: the rail stays empty, and the note and the two link
+   columns start on the content line like every section above them. */
+:root:has(.landing) .foot {
+  margin-top: 0; column-gap: var(--rail-gap);
+  grid-template-columns: var(--rail) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+:root:has(.landing) .foot-note { grid-column: 2; }
+.foot-note { font-size: var(--t-2); line-height: 1.6; color: var(--ink-3); margin: 0; max-width: 46ch; }
+.foot h2 {
+  font-size: var(--t-2); font-weight: 600; letter-spacing: 0; text-transform: none; line-height: 1.4;
+  color: var(--ink); margin: 0 0 var(--s-3); padding: 0; border: 0;
+}
+.foot ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+.foot li { margin: 0; }
+.foot a {
+  font-size: var(--t-2); color: var(--ink-2); text-decoration: none;
+  transition: color var(--d-1) var(--ease);
+}
+.foot a:hover { color: var(--ink); text-decoration: underline; text-decoration-color: var(--hair-strong); text-underline-offset: .2em; }
+.foot a::after { display: none !important; }
+
+/* ---- Small things ---- */
+.feature-cards { margin: var(--s-2) 0; }
+.kicker { font-size: var(--t-3); color: var(--ink-3); font-weight: 500; margin: 0 0 var(--s-2); }
+.dim { color: var(--ink-3); }
+.nowrap { white-space: nowrap; }
+
+/* =================================================================================================================
+   Print touches (landing)
+   The page is set like a small-press print. The hand takes one or two words in a heading. The tinted grounds
+   carry riso grain. A halftone of the plate's own ink gathers under the pointer on the feature plates. The hero
+   has a hand-drawn underline, and the closing band has a rubber stamp.
+   Motion should feel like ink settling: the headline's words rise and unblur, blocks rise once as they arrive,
+   section rules draw across and the roadmap draws itself. All of these run once; nothing here loops.
+   Reduced motion turns all of it off (the global rule at the end of the file). The reveal states only apply under
+   .rv-on, which Reveal.client.tsx sets, so without the script nothing is hidden.
+   ================================================================================================================= */
+
+::selection { background: color-mix(in srgb, var(--tint-mint-ink) 22%, transparent); }
+
+/* ---- The accent word, in the hand. Caveat runs much smaller than the grotesk, so it goes up by a third; the line
+   height is pulled in so the accented line keeps the heading's rhythm. ---- */
+:root:has(.landing) :is(.hero h1, .sec > h2, .closer > p:first-child) em {
+  font-family: var(--hand); font-style: normal; font-weight: 600;
+  font-size: 1.32em; line-height: .8; letter-spacing: 0;
+}
+.sec > h2 em { font-size: 1.4em; }
+
+/* ---- Hero title. "Portable" is in the hand with a hand-drawn mint underline: two marker strokes that draw
+   themselves once on load and then stay. The SVG stretches to the phrase (preserveAspectRatio none), so the stroke
+   gets a little thinner where it runs flat, like a pen. Its top sits just under the baseline. */
+.scribble { position: relative; white-space: nowrap; }
+.scribble-line {
+  position: absolute; left: -2%; bottom: .08em; width: 104%; height: .21em;
+  overflow: visible; pointer-events: none;
+}
+.scribble-line path {
+  fill: none; stroke: var(--tint-mint-ink); stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round;
+  /* The gap is longer than the stroke and the start offset a hair past it, so no round cap shows as a dot before
+     the line starts drawing. */
+  stroke-dasharray: 1 2; stroke-dashoffset: 0;
+  animation: scribble 1.2s cubic-bezier(.6, .05, .25, 1) 300ms backwards;
+}
+@keyframes scribble { from { stroke-dashoffset: 1.05; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .scribble-line path { animation: none; } }
+
+/* ---- Hero. The text stands still (word-by-word entrances were too distracting), apart from the one word in the
+   hand, which an eraser rubs out and a pencil writes again, word after word (HandSwap.tsx builds the keyframes, one
+   step per swap, and HandSwapLoop.client.tsx moves data-step on). The words share one grid cell, so the slot keeps
+   the longest word's width and nothing else in the headline moves. The em lengths below must match the geometry
+   constants at the top of HandSwap.tsx. */
+/* Not selectable, so copying the headline picks up the screen-reader copy of the first word instead of every word. */
+.hand-swap { display: inline-grid; white-space: nowrap; user-select: none; }
+.hand-swap[data-step], .hand-swap[data-step] * {
+  animation-duration: var(--hs-d); animation-timing-function: linear; animation-fill-mode: both;
+}
+.hs-word { grid-area: 1 / 1; justify-self: center; position: relative; }
+/* The clip box: padded past the word so the hand's tall strokes and tails are not cut off, with the padding taken
+   back by negative margins so the word keeps its own width in the line. Its soft right edge is the pen's edge. */
+.hs-clip, .hs-ul {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - .35em), transparent);
+          mask-image: linear-gradient(90deg, #000 calc(100% - .35em), transparent);
+}
+.hs-clip { display: block; margin: -.3em -.45em -.35em -.1em; }
+.hs-ink { display: block; padding: .3em .45em .35em .1em; }
+/* Two marker strokes, stretched to the word (preserveAspectRatio none), so the stroke gets a little thinner where it
+   runs flat, like a pen. Its top sits just under the baseline. */
+.hs-ul { position: absolute; left: -.1em; right: -.45em; bottom: -.28em; height: .4em; }
+.hs-ul-ink { display: block; height: 100%; padding: .07em .45em 0 .1em; }
+.hs-ul svg { display: block; width: 104%; height: .21em; margin-left: -2%; overflow: visible; }
+.hs-ul path { fill: none; stroke: var(--tint-mint-ink); stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; }
+/* The pencil rides a track the size of the clip box, its tip half the soft edge in from the track's right end, on
+   the baseline. */
+.hs-pen, .hs-er { position: absolute; top: 0; bottom: 0; pointer-events: none; z-index: 1; }
+.hs-pen { left: -.1em; right: -.45em; }
+.hs-pencil { position: absolute; left: calc(100% - .175em); bottom: .07em; width: .7em; height: 1.09em; overflow: visible; opacity: 0; }
+.hs-pencil path { stroke: var(--ink-2); stroke-width: 1.4; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.hs-pc-cap { fill: var(--tint-sand); }
+.hs-pc-band { fill: var(--surface-2); }
+.hs-pc-body { fill: var(--tint-mint); }
+.hs-pc-facet { fill: none; opacity: .35; }
+.hs-pc-wood { fill: var(--bg); }
+.hs-pc-lead { fill: var(--ink-2); }
+/* The eraser rides a track the width of the word, centred on the track's left end. */
+.hs-er { left: 0; right: 0; }
+.hs-eraser { position: absolute; left: 0; top: .16em; width: .8em; height: .44em; margin-left: -.4em; overflow: visible; opacity: 0; }
+.hs-eraser :is(rect, path) { stroke: var(--ink-2); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.hs-er-rubber { fill: var(--bg); }
+.hs-er-sleeve { fill: var(--tint-mint); }
+.hs-er-line { fill: none; opacity: .4; }
+.hs-crumb {
+  position: absolute; top: .66em; width: .07em; height: .07em; margin-left: -.035em;
+  border-radius: 50%; background: var(--ink-3); opacity: 0;
+}
+/* The still state, which reduced motion shows: the first word written and underlined, the others hidden. */
+.hs-word ~ .hs-word :is(.hs-clip, .hs-ul) { transform: translateX(-100%); }
+.hs-word ~ .hs-word :is(.hs-ink, .hs-ul-ink) { transform: translateX(100%); }
+@media (prefers-reduced-motion: reduce) {
+  .hand-swap, .hand-swap * { animation: none !important; }
+}
+
+/* The devices rise into place once and then hold still. Looping decorations are kept to the few that carry a point
+   (the credits band, the Gap pulses, the turning diamond): every loop keeps the browser drawing frames for as long as
+   it runs, and a page full of them ran a laptop warm. Any loop that stays must name both ends of its keyframes (a
+   "from" left to the underlying value is "none", which Chrome will not run on the GPU), and entrances fill
+   backwards only (a finished "both" animation stays attached and can block a loop on the same property). */
+.hero-stage > .hs-back  { animation: rise 700ms var(--ease) 60ms backwards; }
+.hero-stage > .hs-front { animation: rise 700ms var(--ease) 160ms backwards; }
+.hero-stage > .hs-hw    { animation: rise 700ms var(--ease) 300ms backwards; }
+
+
+/* ---- Grain in every tinted ground, as if the tint were printed. ---- */
+.sc-plate, .theme-icon, .gap-node.acct, .gap-shared, .era.current { background-image: var(--grain); }
+
+/* ---- Feature plates. A halftone in the plate's ink gathers round the pointer (Reveal.client.tsx sets --mx/--my),
+   and the screen lifts off a tinted copy of itself, one print layer out of register. ---- */
+.sc-plate img { z-index: 1; transition: transform 300ms var(--ease), box-shadow 300ms var(--ease); }
+.sc-plate::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(circle, var(--tint-ink) 1.1px, transparent 1.6px);
+  background-size: 7px 7px;
+  -webkit-mask-image: radial-gradient(160px circle at var(--mx, 50%) var(--my, 75%), #000 15%, transparent 100%);
+  mask-image: radial-gradient(160px circle at var(--mx, 50%) var(--my, 75%), #000 15%, transparent 100%);
+  opacity: 0; transition: opacity 400ms var(--ease);
+}
+.sc-plate:hover::before { opacity: .3; }
+.sc-plate:hover img { box-shadow: var(--lift), 7px 7px 0 0 color-mix(in srgb, var(--tint-ink) 26%, transparent); }
+
+/* ---- Reveal on scroll. ---- */
+.rv-on [data-rv] {
+  transition: opacity var(--d-3) var(--ease), translate var(--d-3) var(--ease), filter var(--d-3) var(--ease);
+  transition-delay: calc(var(--rv-i, 0) * 90ms);
+}
+.rv-on [data-rv]:not(.rv-in) { opacity: 0; translate: 0 28px; }
+.rv-on .sec > h2[data-rv]:not(.rv-in) { translate: 0 .5em; filter: blur(6px); }
+/* The section rule draws from the left. */
+.sec::before { transition: scale 1.4s var(--ease); }
+.rv-on .sec[data-rv-line]:not(.rv-in)::before { scale: 0 1; }
+/* The theme icon draws its own lines. */
+.theme-icon path { stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke-dashoffset 1.6s var(--ease) 200ms; }
+.rv-on .sec-rail[data-rv]:not(.rv-in) .theme-icon path { stroke-dashoffset: 1; }
+/* The roadmap: the rail draws across when the first milestone arrives, then each balloon lands in turn and its
+   leader grows out of it towards the text. The sheet itself is already there, like paper waiting for the drawing. */
+.road::before { clip-path: inset(-12px 0 -12px 0); transition: clip-path 1.6s var(--ease) 80ms; }
+.rv-on .road:has(> .road-step:first-child[data-rv]:not(.rv-in))::before { clip-path: inset(-12px 100% -12px 0); }
+.road-step::before { transition: scale 700ms var(--ease) calc(var(--rv-i, 0) * 140ms + 260ms); }
+.road-step.above::before { transform-origin: 50% 100%; }
+.road-step.below::before { transform-origin: 50% 0; }
+.road-dot { transition: scale 500ms cubic-bezier(.3, 1.6, .5, 1) calc(var(--rv-i, 0) * 140ms + 60ms); }
+.rv-on .road-step[data-rv]:not(.rv-in)::before { scale: 1 0; }
+.rv-on .road-step[data-rv]:not(.rv-in) .road-dot { scale: 0; }
+@container (max-width: 820px) { .road-step:is(.above, .below)::before { transform-origin: 50% 0; } }
+
+/* ---- The closing band: grain over the ground, and the accent is the band's own mint. The band itself is the
+   blueprint (Blueprint layer). ---- */
+.closer::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background-image: var(--grain-on-ink); opacity: .55;
+}
+.closer > p:first-child em { color: var(--closer-mint); }
+.closer .btn:not(.ghost):hover { box-shadow: 4px 4px 0 var(--closer-mint); }
+
+/* ---- Blocks off screen hold their loops still (Reveal.client.tsx sets data-offscreen). ---- */
+[data-offscreen], [data-offscreen]::before, [data-offscreen]::after,
+[data-offscreen] *, [data-offscreen] *::before, [data-offscreen] *::after { animation-play-state: paused !important; }
+
+/* ---- A reading line under the top bar, filled as the page scrolls. ---- */
+@supports (animation-timeline: scroll()) {
+  :root:has(.landing) [data-v-gutter-top]::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    background: var(--tint-mint-ink); transform-origin: 0 50%; scale: 0 1;
+    animation: read-progress linear both; animation-timeline: scroll(root block);
+  }
+  @keyframes read-progress { from { scale: 0 1; } to { scale: 1 1; } }
+}
+
+/* ---- Page to page: a short cross-fade where the browser supports cross-document view transitions. ---- */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+}
+
+/* =================================================================================================================
+   Sketch layer (landing)
+   The outlines, rules and dots on the landing are drawn as if by hand, and a few handwritten notes sit in the
+   margins. The wobble comes from SVG filters (SketchDefs in components/Sketch.tsx): a CSS border goes through a
+   displacement map and comes out uneven. A box gets two strokes through two different wobbles, like pencil going
+   round twice. The strokes live on pseudo-elements, never on the element itself, so text and screenshots inside
+   stay sharp. Everything here is scoped to the landing, where the filter ids exist.
+   ================================================================================================================= */
+:root:has(.landing) {
+  --sk-ink: color-mix(in srgb, var(--ink) 42%, transparent);
+  --sk-soft: color-mix(in srgb, var(--ink) 20%, transparent);
+  --sk-circle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80' preserveAspectRatio='none'%3E%3Cpath d='M148 10C104 0 30 6 12 30C-2 50 52 76 118 72C172 69 198 46 186 25C176 8 128 3 84 9' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+/* A warm paper instead of screen white, in the light theme only. The match is on "color-scheme: dark" because the
+   root's inline style always contains "light-dark(", so a bare [style*='dark'] matches in light mode too. */
+:root:has(.landing):not([style*='color-scheme:dark'], [style*='color-scheme: dark']) { --bg: #FBFAF5; --surface-2: #F2F1EA; }
+.sketch-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* ---- Pencil boxes: the Gap panels, the era cards, the work sheet and the roadmap sheet get a pencil stroke
+   (::before) over ruled construction guides (::after, see the Blueprint layer); the small Gap nodes get the stroke
+   alone. */
+:is(.gap-panel, .era, .road-sheet, .work-sheet, .work-band) { position: relative; box-shadow: none !important; }
+:is(.gap-panel, .era, .road-sheet, .work-sheet, .work-band)::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  border: 1.3px solid var(--sk-line, var(--sk-ink)); border-radius: inherit;
+  filter: url(#sk-a);
+}
+.era.current { --sk-line: var(--tint-mint-ink); }
+.gap-node:not(.use), .gap-shared { position: relative; box-shadow: none !important; }
+.gap-node:not(.use)::before, .gap-shared::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  border: 1.2px solid var(--sk-ink); border-radius: inherit; filter: url(#sk-a);
+}
+.gap-node.acct::before { border-color: color-mix(in srgb, var(--tint-ink) 50%, transparent); }
+.gap-shared::before { border: 1.7px solid var(--tint-mint-ink); }
+
+/* ---- Pencil lines: section rules, the risk rules, the eras rail, the roadmap, the wires and connectors. ---- */
+.sec::before { background: var(--sk-soft); filter: url(#sk-line); }
+.risks li { position: relative; border-top: 0; }
+.risks li::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: var(--sk-soft); filter: url(#sk-line);
+}
+.eras::before { filter: url(#sk-line); }
+/* The roadmap rail is one line, so it can wobble in one go; the leaders and the balloon rings are drawn by hand
+   too, while the numbers inside stay sharp. On a narrow sheet the rail is one segment per step, and each would
+   wobble on its own noise, so the joins would jump: those stay straight. */
+.road::before { filter: url(#sk-line); }
+.road-step::before { filter: url(#sk-vline); }
+.road-dot::before { filter: url(#sk-c); }
+@container (max-width: 820px) { .road-step::before { filter: none; } }
+
+.gap-wires i::before { filter: url(#sk-vline); }
+
+/* ---- The feature plates: a pencil line traced round each one, a little outside its edge. The plate itself stays
+   crisp, since it holds a screenshot. ---- */
+.sc { position: relative; }
+.sc-frame {
+  position: absolute; left: -4px; right: -4px; top: -4px; height: calc(240px + 8px); pointer-events: none;
+  border: 1.3px solid color-mix(in srgb, var(--tint-ink) 38%, transparent); border-radius: 17px;
+  filter: url(#sk-b);
+}
+
+/* ---- Icons drawn by hand on a blob of tint. ---- */
+.theme-icon { border-radius: 46% 54% 42% 58% / 55% 45% 55% 45%; }
+.theme-icon svg { filter: url(#sk-a); }
+
+/* ---- Buttons: an ink block with a hand-cut edge, a pencil outline for the ghost. The fill is a pseudo-element,
+   so the wobble never touches the label. The hover offset is drawn on the same pseudo-element and wobbles with it. */
+:root:has(.landing) .btn {
+  position: relative; isolation: isolate;
+  background: transparent !important; box-shadow: none !important;
+  --btn-fill: var(--ink); --btn-line: var(--ink);
+}
+:root:has(.landing) .btn::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  background: var(--btn-fill); border: 1.3px solid var(--btn-line);
+  filter: url(#sk-a);
+  transition: background-color var(--d-1) var(--ease), box-shadow var(--d-2) var(--ease);
+}
+:root:has(.landing) .btn:hover { --btn-fill: color-mix(in srgb, var(--ink) 84%, var(--bg)); }
+:root:has(.landing) .btn:not(.ghost):hover::before { box-shadow: 4px 4px 0 var(--tint-mint-ink); }
+:root:has(.landing) .btn.ghost { --btn-fill: transparent; --btn-line: var(--sk-ink); }
+:root:has(.landing) .btn.ghost:hover { --btn-fill: var(--surface-2); }
+/* The closing band is inverted. These need the same :root:has() prefix as the rules above, or those win. */
+:root:has(.landing) .closer .btn { --btn-fill: var(--bg); --btn-line: var(--bg); }
+:root:has(.landing) .closer .btn:hover { --btn-fill: color-mix(in srgb, var(--bg) 88%, var(--ink)); }
+:root:has(.landing) .closer .btn:not(.ghost):hover::before { box-shadow: 4px 4px 0 var(--closer-mint); }
+:root:has(.landing) .closer .btn.ghost { --btn-fill: transparent; --btn-line: color-mix(in srgb, var(--bg) 45%, transparent); }
+:root:has(.landing) .closer .btn.ghost:hover { --btn-fill: color-mix(in srgb, var(--bg) 10%, transparent); }
+
+/* ---- The italic word in a section heading gets a pen circle round it, drawn in (wiped) when the heading arrives. */
+.sec > h2 em { position: relative; margin: 0 .1em 0 .14em; }
+.sec > h2 em::after {
+  content: ''; position: absolute; inset: -.06em -.3em -.16em -.24em; pointer-events: none;
+  background: var(--tint-mint-ink);
+  -webkit-mask: var(--sk-circle) center / 100% 100% no-repeat; mask: var(--sk-circle) center / 100% 100% no-repeat;
+  clip-path: inset(0 0 0 0); transition: clip-path 1s var(--ease) 350ms;
+}
+.rv-on .sec > h2[data-rv]:not(.rv-in) em::after { clip-path: inset(0 100% 0 0); }
+
+/* ---- Handwritten notes. The text sits where the className puts it; the arrow hangs off it towards its target. */
+.note {
+  position: absolute; z-index: 6; display: block; pointer-events: none;
+  font-family: var(--hand); font-size: 23px; font-weight: 500; line-height: 1; letter-spacing: 0;
+  color: var(--tint-mint-ink); white-space: nowrap; text-align: left;
+}
+.note-arrow { position: absolute; overflow: visible; filter: url(#sk-a); }
+.note-arrow path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.note-down-left .note-arrow { width: 58px; height: 45px; right: calc(100% - 6px); top: 60%; }
+.note-down-right .note-arrow { width: 58px; height: 45px; left: calc(100% - 6px); top: 60%; }
+.note-up-right .note-arrow { width: 58px; height: 45px; left: calc(100% - 6px); bottom: 60%; }
+.note-left .note-arrow { width: 60px; height: 32px; right: calc(100% + 4px); top: -2px; }
+.note-right .note-arrow { width: 60px; height: 32px; left: calc(100% + 4px); top: -2px; }
+.note-down .note-arrow { width: 30px; height: 42px; left: 30%; top: 100%; }
+/* Roadmap: under the rail, left of the step in progress, pointing up at its balloon, which also gets a pen circle.
+   On a narrow sheet it sits after the step's "In progress" label instead, without the arrow. */
+.road-note { right: calc(100% + 46px); top: 10px; rotate: -5deg; }
+.road-step.now .road-dot::after {
+  content: ''; position: absolute; inset: -9px -13px -8px -11px; pointer-events: none;
+  background: var(--tint-mint-ink);
+  -webkit-mask: var(--sk-circle) center / 100% 100% no-repeat; mask: var(--sk-circle) center / 100% 100% no-repeat;
+}
+@container (max-width: 820px) {
+  .road-note { right: auto; left: calc(var(--ball) + var(--s-4) + 100px); top: -9px; }
+  .road-note .note-arrow { display: none; }
+}
+/* Acknowledgements: beside the title. */
+.credits-head { position: relative; }
+.credits-note { left: calc(50% + 200px); top: 4px; rotate: -6deg; }
+@media (max-width: 760px) { .credits-note { display: none; } }
+@media (max-width: 640px) { .sc-frame { height: calc(260px + 8px); } }
+
+/* =================================================================================================================
+   Blueprint layer (landing)
+   The page is a drawing that is still being made. It sits on drafting paper with a faint grid in construction
+   blue, and the construction stays visible: ruled guides run past the corners of the boxes, and a small cross
+   marks each end of a section rule. Settled parts are inked; open parts are
+   drawn in blue, so the roadmap draws the steps still ahead in blue pencil. Sections carry numbers, like a
+   specification. The closing band is the blueprint itself, with a title block whose "Reviewed by" line is still
+   empty. Nothing here moves at rest: the guides draw in once when their box arrives. Dark mode is the blueprint
+   the other way round: a deep blue ground with light lines.
+   ================================================================================================================= */
+:root:has(.landing) {
+  --bp: #3A78D0;
+  --bp-ink: #2A62AE;                                            /* blue text: 5.9:1 on the paper */
+  --bp-line: color-mix(in srgb, var(--bp) 42%, transparent);   /* construction lines */
+  --bp-soft: color-mix(in srgb, var(--bp) 22%, transparent);
+  --bp-grid: color-mix(in srgb, var(--bp) 2.5%, transparent);  /* the grid, every 24px: barely there */
+  --bp-grid-2: color-mix(in srgb, var(--bp) 5%, transparent);   /* every fifth line */
+  --bp-over: 12px;                                              /* how far a guide runs past a corner */
+}
+:root:has(.landing):is([style*='color-scheme:dark'], [style*='color-scheme: dark']) {
+  --bg: #0C1524; --surface-2: #122036;
+  --hair: rgba(170, 200, 245, .1); --hair-strong: rgba(170, 200, 245, .18);
+  --bp: #7EAEF0; --bp-ink: #A2C4F5;
+  --bp-grid: color-mix(in srgb, var(--bp) 2.5%, transparent);
+  --bp-grid-2: color-mix(in srgb, var(--bp) 4.5%, transparent);
+}
+
+/* ---- Drafting paper. Both grids are centred on the page, so the content column's edges fall on grid lines. The
+   x position is 50% plus half a cell because a percentage places the tile's middle, not its first line. ---- */
+:root:has(.landing) body {
+  background-image:
+    linear-gradient(var(--bp-grid-2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-grid-2) 1px, transparent 1px),
+    linear-gradient(var(--bp-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-grid) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  background-position: 0 0, calc(50% + 60px) 0, 0 0, calc(50% + 12px) 0;
+}
+
+/* ---- Construction guides round the pencil boxes: one ruled line along each edge, running a little past the
+   corners and fading out there. They draw across once when the box arrives. ---- */
+:is(.gap-panel, .era, .road-sheet, .work-sheet)::after {
+  --g: linear-gradient(var(--bp-line), var(--bp-line));
+  --fade: transparent, #000 var(--bp-over), #000 calc(100% - var(--bp-over)), transparent;
+  content: ''; position: absolute; inset: calc(-1 * var(--bp-over)); z-index: 0; pointer-events: none;
+  background:
+    var(--g) left 0 top var(--bp-over) / 100% 1px no-repeat,
+    var(--g) left 0 bottom var(--bp-over) / 100% 1px no-repeat,
+    var(--g) left var(--bp-over) top 0 / 1px 100% no-repeat,
+    var(--g) right var(--bp-over) top 0 / 1px 100% no-repeat;
+  -webkit-mask: linear-gradient(90deg, var(--fade)), linear-gradient(var(--fade));
+  -webkit-mask-composite: source-in;
+  mask: linear-gradient(90deg, var(--fade)), linear-gradient(var(--fade));
+  mask-composite: intersect;
+  clip-path: inset(0); transition: clip-path 1.1s var(--ease) 80ms;
+}
+.rv-on :is(.gap-panel, .era)[data-rv]:not(.rv-in)::after,
+.rv-on .road-sheet:has(.road-step:first-child[data-rv]:not(.rv-in))::after { clip-path: inset(0 100% 0 0); }
+
+/* The wallet still to be built: opposite Lantern, behind Keel, drawn in construction lines on a sheet of tracing
+   paper, with dashed placeholders for its screen and a centre line through it. It arrives last. Phones hide it,
+   since the hardware wallet covers that corner of their stage. */
+.hs-ghost { position: absolute; z-index: 1; width: 24%; height: auto; left: 61%; top: 9%; overflow: visible; rotate: 4deg; animation: rise 700ms var(--ease) 440ms backwards; }
+.ghost-phone :is(rect, circle, path) { fill: none; stroke: var(--bp); stroke-width: 1.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ghost-phone .gh-body { fill: color-mix(in srgb, var(--bg) 84%, transparent); stroke-width: 1.5; filter: url(#sk-a); }
+.ghost-phone .gh-screen { stroke-opacity: .6; }
+.ghost-phone .gh-part { stroke-opacity: .6; stroke-dasharray: 5 5; }
+.ghost-phone .gh-axis { stroke-opacity: .45; stroke-dasharray: 22 5 3 5; }
+.hs-note-ghost { left: 83%; top: -4%; rotate: 5deg; color: var(--bp-ink); }
+@media (max-width: 640px) { .hs-ghost, .hs-note-ghost { display: none; } }
+/* The diamond behind the devices is drawn in construction lines. HeroOrbit reads this fill for its canvas. */
+.orbit-face { fill: var(--bp); }
+.orbit-edge { stroke: var(--bp); }
+
+/* ---- Section numbers, like a specification: a marker over each heading, § 01 to § 06, and § 03.1 to § 03.4 for
+   the themes under What every user gets. A cross marks each end of every section rule. ---- */
+:root:has(.landing) article { counter-reset: sec; }
+.sec:not(.theme) { counter-increment: sec; counter-reset: sub; }
+.sec.theme { counter-increment: sub; }
+:is(.sec > h2, .sec-rail h2)::before {
+  display: flex; align-items: center; justify-content: center;
+  width: max-content; min-width: 26px; height: 26px; margin: 0 0 var(--s-3); padding: 0 7px;
+  border: 1px solid var(--bp-line); border-radius: 13px;
+  font: 500 10.5px/1 var(--vocs-font-family-mono); letter-spacing: .04em; color: var(--bp-ink);
+}
+.sec > h2::before { content: counter(sec, decimal-leading-zero); }
+.sec-rail h2::before { content: counter(sec, decimal-leading-zero) '.' counter(sub); position: absolute; top: 7px; left: 56px; margin: 0; }
+.sec.theme .sec-rail { position: relative; }
+.sec::after {
+  --g: linear-gradient(var(--bp-line), var(--bp-line));
+  content: ''; position: absolute; top: -5px; left: -5px; right: -5px; height: 11px; pointer-events: none;
+  background:
+    var(--g) left 0 top 5px / 11px 1px no-repeat, var(--g) left 5px top 0 / 1px 11px no-repeat,
+    var(--g) right 0 top 5px / 11px 1px no-repeat, var(--g) right 5px top 0 / 1px 11px no-repeat;
+}
+
+/* ---- The roadmap sheet. A ruled strip across the top carries the title and the legend in the drawing's own
+   lettering. What is done is inked; from the step in progress on, the rail is a blue chain line (long dash, short dash, like the
+   ghost wallet's centre line), and the leaders and balloons of the steps ahead are blue pencil. ---- */
+.road-head { border-bottom-color: var(--bp-line); color: var(--bp-ink); }
+.road-key .next::before { box-shadow: inset 0 0 0 1.5px var(--bp-line); }
+.road::before {
+  --inked: calc(var(--reached, 0) / (var(--n, 6) - 1) * 100%);
+  background:
+    linear-gradient(90deg, var(--tint-mint-ink) var(--inked), transparent 0),
+    repeating-linear-gradient(90deg, var(--bp-line) 0 16px, transparent 0 21px, var(--bp-line) 0 24px, transparent 0 29px);
+}
+.road-step:is(.now, .next)::before { background: repeating-linear-gradient(var(--bp-line) 0 5px, transparent 0 9px); }
+.road-step:is(.now, .next)::after { background: var(--bp-line); }
+.road-step.next .road-dot { color: var(--bp-ink); }
+.road-step.next .road-dot::before { border-color: var(--bp-line); }
+/* The last balloon is the destination: a second ring round it, like a target on a drawing. */
+.road-step:last-child .road-dot { box-shadow: 0 0 0 4px var(--bg), 0 0 0 5.5px var(--bp-line); }
+.road-step.next .road-when { color: var(--bp-ink); }
+@container (max-width: 820px) {
+  .road-step:is(.now, .next)::before { background: repeating-linear-gradient(var(--bp-line) 0 16px, transparent 0 21px, var(--bp-line) 0 24px, transparent 0 29px); }
+}
+.eras::before { border-top-color: var(--bp-line); }
+
+/* ---- The closing band is the blueprint: a blue sheet with a white grid, the ask on the left and the drawing's
+   title block on the right. It looks the same in both themes, so it sets its own ink and paper, and the band's
+   rules above (which invert --ink and --bg) follow. ---- */
+.closer {
+  --ink: #1B4B8F; --bg: #F3F7FD; --closer-mint: #8FE3B7;
+  --grain-on-ink: var(--grain-light);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 320px); column-gap: var(--s-8);
+  /* The title block is taller than the text beside it. It spans every row, and the two flexible rows at the ends
+     take the extra height, so the text stays centred against it instead of spreading out. */
+  grid-template-rows: 1fr auto auto auto 1fr;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .13) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, .06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .06) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  background-position: -1px -1px;
+}
+:root[style*='color-scheme:dark'] .closer,
+:root[style*='color-scheme: dark'] .closer { --ink: #18427F; box-shadow: inset 0 0 0 1px rgba(162, 196, 245, .25); }
+.closer::after { opacity: .35; }
+.closer > :not(.tblock) { grid-column: 1; }
+.closer > p:first-child { grid-row: 2; }
+.closer > p:nth-child(2) { grid-row: 3; }
+.closer > .cta { grid-row: 4; }
+.closer > .tblock { grid-column: 2; grid-row: 1 / -1; margin-top: var(--s-5); }
+
+.tblock { --tb-rule: color-mix(in srgb, var(--bg) 34%, transparent); position: relative; }
+.tblock dl { margin: 0; border: 1.5px solid color-mix(in srgb, var(--bg) 72%, transparent); background: var(--ink); }
+.tb-row { display: grid; grid-template-columns: 104px minmax(0, 1fr); margin: 0; border-top: 1px solid var(--tb-rule); }
+.tb-row:first-child { border-top: 0; }
+.tb-row dt {
+  display: flex; align-items: center; padding: 7px 10px; border-right: 1px solid var(--tb-rule);
+  font: 500 10px/1.3 var(--vocs-font-family-mono); letter-spacing: .1em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--bg) 66%, var(--ink));
+}
+.tb-row dd { margin: 0; padding: 7px 12px; font-size: var(--t-2); font-weight: 500; line-height: 1.35; color: var(--bg); }
+/* The empty field: a ruled line with the question written on it by hand. */
+.tb-open dd { position: relative; min-height: 40px; }
+.tb-open dd::after {
+  content: ''; position: absolute; left: 12px; right: 14px; bottom: 9px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--bg) 55%, transparent);
+}
+.tb-hand {
+  position: absolute; left: 16px; bottom: 7px; rotate: -4deg;
+  font-family: var(--hand); font-size: 24px; font-weight: 500; line-height: 1; color: var(--closer-mint);
+}
+/* A rubber stamp pressed over the block's corner, in red, with the ink worn in places. */
+:root:has(.landing) {
+  --stamp-wear: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='w' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.6 0 0 0 2.25'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23w)'/%3E%3C/svg%3E");
+}
+.tb-stamp {
+  position: absolute; bottom: calc(100% + 6px); right: -6px; z-index: 2; rotate: 7deg;
+  padding: 6px calc(13px - .24em) 5px 13px; border: 3px solid #FF7B6B; border-radius: 6px;
+  font: 700 19px/1 var(--vocs-font-family-mono); letter-spacing: .24em; text-transform: uppercase; color: #FF7B6B;
+  -webkit-mask-image: var(--stamp-wear); mask-image: var(--stamp-wear);
+}
+
+/* =================================================================================================================
+   Narrow screens
+   ================================================================================================================= */
+@media (max-width: 1100px) {
+  :root:has(.landing) { --rail: 184px; --rail-gap: var(--s-6); }
+}
+/* Below 960px the rail folds away: headings go above their sections and the preamble goes under the buttons. */
+@media (max-width: 960px) {
+  .hero { padding: var(--s-7) 0 var(--s-6); }
+  .hero-stage { margin-top: var(--s-7); }
+  .sec { grid-template-columns: minmax(0, 1fr); padding: var(--s-6) 0 var(--s-8); }
+  .sec > h2 { position: static; margin-bottom: var(--s-5); font-size: var(--t-7); }
+  .sec-rail { margin-bottom: var(--s-5); }
+  .sec-rail h2 { font-size: var(--t-7); }
+  .sec-rail p { max-width: 36em; font-size: var(--t-4); }
+  .sec-body { grid-column: 1; }
+  .foot, :root:has(.landing) .foot { grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, .7fr)); }
+  :root:has(.landing) .foot-note { grid-column: auto; }
+  .closer { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .closer > * { grid-row: auto !important; }
+  .closer > .tblock { grid-column: 1; width: 100%; max-width: 360px; margin-top: var(--s-8); }
+}
+@media (max-width: 760px) {
+  .showcase { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .hero { padding: var(--s-6) 0 var(--s-5); }
+  .hero h1 { font-size: clamp(32px, 9vw, 40px); line-height: 1.08; letter-spacing: -.03em; }
+  .hero-lede { font-size: var(--t-4); }
+  /* Phones: a taller stage, so the three devices stay big enough to read as screens. */
+  .hero-stage { margin-top: var(--s-6); aspect-ratio: 343 / 400; }
+  .orbit { width: 100%; }
+  .orbit-canvas { width: 125%; }
+  .hs-back  { width: 44%; left: 2%;  top: 6%; }
+  .hs-front { width: 48%; left: 26%; top: 0; }
+  .hs-hw    { width: 60%; left: 38%; top: 58%; }
+  .eras, .gap, .risks { grid-template-columns: minmax(0, 1fr); }
+  /* The feature row turns into a strip that swipes sideways and bleeds to the screen edges. */
+  .showcase {
+    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 72%; gap: var(--s-3);
+    margin-inline: calc(-1 * var(--s-4)); padding: 0 var(--s-4) var(--s-1);
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--s-4); scrollbar-width: none;
+  }
+  .showcase::-webkit-scrollbar { display: none; }
+  .sc { scroll-snap-align: start; }
+  .sc-plate { height: 260px; }
+  .gap-body { padding-inline: var(--s-3); }
+  .gap-wires.tall { height: var(--s-5); }
+  .gap-pulse { display: none; }
+  .credits-fixed { flex-direction: column; padding: 0; }
+  .credits-fixed li { padding: var(--s-2) var(--s-5); }
+  .gap-node { font-size: var(--t-1); }
+  .eras::before { display: none; }
+  .closer { padding: var(--s-7) var(--s-5); }
+  .road-sheet { padding: var(--s-4) var(--s-4) var(--s-6); }
+  .work-sheet { padding: var(--s-4) var(--s-4) var(--s-5); }
+  .work-head { margin: 0 calc(-1 * var(--s-4)) var(--s-5); padding: 0 var(--s-4) var(--s-3); }
+  .road-head { margin: 0 calc(-1 * var(--s-4)) var(--s-6); padding: 0 var(--s-4) var(--s-3); }
+  .sec .lead-col p, .sec .lead-col li { font-size: var(--t-4); }
+  .features { grid-template-columns: minmax(0, 1fr); }
+  .anat { grid-template-columns: minmax(0, 1fr); }
+  .deliver ul { grid-template-columns: minmax(0, 1fr); }
+  .row { gap: var(--s-5); }
+  .row figure.shot { flex: 1 1 100%; max-width: 100%; }
+  .row figure.shot.shot-phone img, figure.shot.shot-phone img { max-width: 240px; }
+  .cta .btn, .hero-cta .btn { flex: 1 1 auto; }
+  .bars { grid-template-columns: minmax(0, 1fr); gap: var(--s-1); }
+  .bars .bar-value { text-align: left; margin-bottom: var(--s-2); }
+  .foot, :root:has(.landing) .foot { grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Text that only the screen reader gets (the Timeline's event list). */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}

@@ -1,0 +1,101 @@
+---
+title: The road to Hegotá
+description: The steps from draft to mainnet, what Ethlabs builds, how v1 evolves, and how to get involved.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+import { Join } from '../../components/Join'
+
+# The road to Hegotá [The steps from draft to mainnet, what Ethlabs builds, how v1 evolves, and how to get involved.]
+
+The goal is every wallet shipping PACE by default when Hegotá activates, with the contracts audited, the descriptors published and hardware wallets ready. Ethlabs builds the contracts through v1 and organizes the working group, so the work every wallet would otherwise do alone happens once.
+
+## From draft to mainnet
+
+::::steps
+### Public draft
+
+Out now: the ERC, these docs, the research notes and the interactive mockup.
+
+### Working group
+
+In progress. Wallet, client, hardware, security, explorer and EF teams agree on what goes into the core. Each request in [what we need to do](/docs/what-has-to-change) goes to its own authors.
+
+### Devnet deployment
+
+The reference contracts on Ethrex’s EIP-8141 devnet. We measure validation gas against the 100,000 limit, test the Keystore read rule and the nonce lane rule as node patches, and publish the numbers.
+
+### Revised draft
+
+Feedback from the group and the devnet goes into the draft. Anything that doesn’t have to be shared moves out to wallet extensions.
+
+### Testnet deployment
+
+The same contracts on the Hegotá testnets as clients ship them, and on Base for the EIP-8130 side, with public gas benchmarks.
+
+### Audits and formal verification
+
+Two independent audits of the contracts, and machine-checked proofs of the authenticators and the assertion contract.
+
+### Mainnet launch
+
+At Hegotá activation: a frozen v1 with migration guides for Safe, ERC-4337 accounts and EOAs.
+::::
+
+## What Ethlabs builds
+
+- **The shared contracts:** the Ethereum account that reads the Keystore, the assertion builder and contract, the permission manager, the session authenticator and the threshold authenticator.
+- **A wallet library:** the approval sheet model, key changes, and an encoder for each transport.
+- **Clear signing metadata** for every PACE operation, in the open registry at clearsigning.org.
+- **A hardware wallet reference** that renders frames and assertions, tested with Ledger’s and Trezor’s ERC-7730 pipelines.
+- **An explorer kit** with decoders for the new transactions, the Keystore events and the receipts.
+- **Reference extensions** a wallet may use: a spend-limit manager, a post-quantum authenticator and a paymaster repaid from the received asset.
+
+:::file-tree
+- +pace
+  - +spec the v1 text, the ERC-5792 extension and the other additions it files
+  - +contracts a Foundry project
+    - +core what every wallet ships
+      - +account the 8141 account that reads the Keystore
+      - AssertionBuilder.sol the shared assertion encoding
+      - Assertions.sol the assertion contract
+      - PermissionManager.sol the ERC-7710 entry point
+      - SessionAuthenticator.sol several permissions per app
+      - ThresholdAuthenticator.sol co-signers and multisigs
+    - +extensions optional references
+  - +wallet-lib
+  - +descriptors
+  - +hw-renderer
+  - +explorer-kit
+  - +benchmarks
+:::
+
+## How v1 evolves
+
+PACE will be wrong in places, so it is versioned. Changing it needs no fork, because the contracts, descriptors and wallet library all sit above the protocol. We propose:
+
+- A working group of the teams who have to move together. Ethlabs convenes v1 and then hands over.
+- The core stays small. A feature goes in only if every wallet has to support it the same way for accounts to stay portable and readable.
+- At most one minor version a quarter, additive only. A major version only when a row format or signature entry point changes, with a migration path.
+- Every version tested on a devnet, with gas and audit reports attached.
+- A public issue tracker, where a rejected request gets a written reason.
+
+## Get involved
+
+The fastest way to disagree with this proposal is to click through the interactive mockup and find the screen where it breaks for you.
+
+<div className="cta">
+  <Join />
+  <a className="btn ghost" href="/demo/demo.html" target="_blank" rel="noreferrer">Open the interactive mockup</a>
+  <a className="btn ghost" href="https://github.com/ethlabs" target="_blank" rel="noreferrer">Discuss on GitHub</a>
+</div>
+
+Tell us what you need from your side:
+
+- **Wallets:** which flow you couldn’t ship on this.
+- **Client teams:** what the Keystore read rule and the nonce lane rule cost.
+- **EIP-8130 authors:** whether 8130 would take a call after all phases.
+- **Hardware wallets:** what doesn’t fit on the screen.
+- **Security services:** what a co-signing API looks like from your side.
+- **The EF’s privacy and post-quantum teams:** where we read your requirements wrong.

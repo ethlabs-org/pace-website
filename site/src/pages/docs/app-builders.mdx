@@ -1,0 +1,48 @@
+---
+title: What app builders get
+description: One transaction path for every wallet that ships PACE, in place of a path for each kind of account.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+# What app builders get [One transaction path for every wallet that ships PACE, in place of a path for each kind of account.]
+
+Today an app has to reason about several transaction paths at once. A plain EOA approves and then acts, with one signature per call and gas paid in ETH. An EOA upgraded with EIP-7702 can batch, if its wallet supports it, through whatever code that wallet delegated to. An ERC-4337 account goes through a bundler, with its own modules and paymaster. On top of that, every wallet answers differently on sponsored gas, app permissions and receipts. So the app checks what each wallet can do, writes a fallback for every missing feature and tests every combination.
+
+With PACE every wallet that ships it runs the same account and answers the same API, so the app has one path to reason about. It goes through one extension to ERC-5792 and through ERC-7715 and ERC-7710. The extension is still to be written, and it is on [what we need to do](/docs/what-has-to-change#give-apps-one-api-for-pace).
+
+## Send
+
+The app hands the wallet its calls with `wallet_sendCalls`. The PACE extension adds what the account can do: phases that each succeed or fail as a whole, a nonce lane, a gas payer and assertions the app asks for. The wallet runs the same request the same way on Ethereum, on Base and on other chains. [One signature for the whole batch](/docs/banking-app#one-signature-for-the-whole-batch) and [assertions](/docs/transaction-security#assertions-the-chain-enforces) explain what happens on chain.
+
+## Ask for access
+
+The app asks for a permission with one ERC-7715 request, like up to 200 USDC a week. Every wallet stores it the same way, and the app uses it through ERC-7710 on one shared permission manager. The user can see and revoke the permission from any wallet. [App permissions](/docs/transaction-security#app-permissions-with-limits) has the flow.
+
+## Read the result
+
+`wallet_getCallsStatus` returns the result in the same shape on every chain. The extension adds a status for a transaction whose assertions failed: it was included and paid for, and its calls were reverted on purpose.
+
+## Check what holds on each chain
+
+`wallet_getCapabilities` tells the app, per chain, what the account can do there, so the app doesn’t have to guess from the wallet’s name:
+
+```json [the account facts capability (sketch)]
+{
+  "accountFacts": {
+    "transport": "8130 | 8141 | 4337",
+    "assertions": "post-tx | per-phase | none",
+    "nonceLanes": true,
+    "coSigner": true
+  }
+}
+```
+
+## What still differs
+
+A few things still depend on the chain or the user, and the account facts tell the app which ones apply:
+
+- **Assertions on Base** guard one phase at a time until EIP-8130 adds a call that runs after all phases.
+- **Nonce lanes on Ethereum** need EIP-8250 and a mempool rule.
+- **ETH sent inside a batch** has no portable encoding yet.
+- **Wallets that don’t ship PACE**, and EOAs that never upgrade, still need today’s paths.

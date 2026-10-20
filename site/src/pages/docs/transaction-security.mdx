@@ -1,0 +1,130 @@
+---
+title: Approve the result you expect
+description: Assertions the chain enforces, co-signers through a shared threshold authenticator, and app permissions any wallet can see and revoke.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+import { Shot, Row } from '../../components/Shot'
+
+# Approve the result you expect [Assertions the chain enforces, co-signers through a shared threshold authenticator, and app permissions any wallet can see and revoke.]
+
+Getting drained is the biggest risk of holding your own keys. With PACE the user approves the result they expect, and the chain reverts anything else. A security co-signer can refuse a bad transaction before it counts, and an app can only act inside limits the user set, which any wallet can show and revoke. Everything on this page is in PACE. Which security service a wallet offers as a co-signer is the wallet’s choice.
+
+## Assertions the chain enforces
+
+A simulation can only predict what a transaction will do. EIP-7906 lets the chain enforce it. It adds a POST_TX frame that runs after everything else and reads every balance, storage slot and event the transaction changed. If that frame reverts, the whole execution is rolled back. The transaction is still included and its gas is paid, so builders take no risk, and the user’s funds are untouched.
+
+The wallet simulates the transaction, shows the user what changes, and writes those changes as assertions:
+
+```text [the assertions for a swap]
+spend    USDC   at most   1,000.00    balance(USDC, me)  ≥  before − 1,000
+receive  WETH   at least  0.312       balance(WETH, me)  ≥  before + 0.312
+approvals of mine        unchanged    no allowance left behind
+nothing else of mine     unchanged    no other Transfer or Approval from me, ETH down by the fee at most
+```
+
+The account can also require assertions on every transaction, so a hacked computer can’t send one without them. The account keeps no list of assets, because each transaction’s simulation says what may change.
+
+<Shot id="batch-state" kind="phone" caption="The approval sheet with the assertions spelled out. “Nothing else changes” is an assertion the chain checks." />
+
+### The assertion contract
+
+Every wallet encodes assertions with one shared builder, and one fixed contract, `ASSERTIONS`, checks them. Its vocabulary is small, so a hardware wallet can describe every rule from the bytes it signs.
+
+```solidity [Assertion]
+enum Kind { SPEND_AT_MOST, RECEIVE_AT_LEAST, NO_NEW_APPROVAL, UNCHANGED, NOTHING_ELSE }
+struct Assertion {
+    Kind    kind;
+    address token;    // address(0) for ETH
+    address holder;   // usually the account
+    bytes32 slot;     // storage slot of holder's balance in token
+    uint256 amount;   // for SPEND_AT_MOST and RECEIVE_AT_LEAST
+}
+```
+
+`NOTHING_ELSE` makes the list complete. It finds every `Transfer` from the account and every `Approval` by it, and fails if one involves a token no other assertion names. So a token the wallet didn’t expect can’t move without failing the transaction. PACE requires it whenever a wallet attaches assertions. A party can still point a POST_TX frame at its own contract, and the chain enforces it, but a hardware wallet can’t describe that contract without simulating it.
+
+### On EIP-8130 chains
+
+EIP-8130 runs nothing after the transaction, so on Base an assertion has to be a call inside the batch. It guards only its own phase and reads current state instead of the full set of changes, so `NOTHING_ELSE` can’t be checked there. We are asking the 8130 authors for one call that runs after all phases and can revert all of them, so assertions work the same on both.
+
+## Co-signers and multisigs
+
+A threshold row lets several keys act as one. A user can join their phone and their hardware wallet into a 2 of 2, or pair their phone with a security service. Both use the same shared contract, the threshold authenticator, and the row counts only when enough members sign.
+
+```solidity [Threshold row]
+struct Member {
+    address authenticator;   // any EIP-8130 authenticator
+    bytes32 memberId;        // the actorId that authenticator must return
+}
+actorId = keccak256(abi.encode(uint8 threshold, Member[] members));
+data    = abi.encode(uint8 threshold, Member[] members, uint256 signerBitmap, bytes[] signatures);
+```
+
+To check a signature, the authenticator asks each signing member’s own authenticator to verify it and counts the members who passed. The Keystore stores only the hash of the members, and the member list travels with every signature, so a member needs no row of its own. Changing a member changes the row, so the wallet replaces the old row with a new one in one signed change.
+
+A protected key is a threshold row of the user’s passkey and a security service’s key, 2 of 2. The service simulates the transaction, checks it against its rules and adds its signature, or refuses. It can’t act alone or change the calls.
+
+<Row>
+  <Shot id="protected-key" kind="phone" caption="The everyday key with protection on. To the user it is still “iPhone”. On chain it is a 2 of 2 with Safenet." />
+  <Shot id="multisig" kind="phone" caption="The phone and the Anchor added as one 2 of 2 key. On chain it is one threshold row." />
+</Row>
+
+On Base, a threshold row works on the native transaction path once Base adds the threshold authenticator to its canonical set. Until then a protected key on Base goes through a policy manager that checks the co-signer’s signature before it forwards the calls.
+
+### Which service co-signs
+
+The user picks the service on the add-key sheet and can switch later by replacing one row. The address, the other keys and the funds stay as they are. Today the services work differently:
+
+- **Safenet** (beta since April 2026) is a staked validator network whose attestation a Safe Guard requires.
+- **Blockaid**’s Cosigner (April 2025) is a real signer in a multisig quorum.
+- **Hypernative**’s Transaction Guard checks a transaction before signatures are collected. The mockup gives it a key of its own.
+
+A wallet can model each of them the same way, as one member of a threshold row. We couldn’t confirm a public co-signing API for any of them. A service whose key rotates, like Safenet’s, needs either a row change on each rotation or a validation-time read of its current key, which EIP-8141’s mempool rules don’t allow yet.
+
+### Override keys
+
+An override key lets the user act without the co-signer, for when the service is down or refuses, and to turn protection off. It is an admin row outside the threshold row, such as a hardware wallet. Key changes need an admin row, and the protected phone key isn’t admin, so a stolen phone can only sign what the service agrees to and can’t remove its own guard. A wallet that offers co-signers should offer an override key too.
+
+## App permissions with limits
+
+A user can let an app act for them within limits they set, like up to 200 USDC a week until March. They approve it once, and the permission shows up next to their keys in every wallet.
+
+The app asks with one ERC-7715 call, `wallet_requestExecutionPermissions`, the same request MetaMask has served on 15 mainnets since April 2026. The wallet answers by writing one Keystore row per permission:
+
+```text [what the wallet writes for each permission]
+authenticator      SESSION_AUTHENTICATOR  checks the app's session key
+actorId            keccak256(sessionSigner, slot)  one row per permission
+scope              POLICY            calls may only go to the permission manager
+expiry             from the request  checked before any code runs
+policy_manager     PERMISSION_MANAGER
+policy_commitment  keccak256(terms)  the chain keeps the hash, the wallet keeps the terms
+```
+
+The response carries the manager and the terms in the fields ERC-7715 already defines, so an app written for MetaMask needs no change.
+
+<Row>
+  <Shot id="tidepool-automate" kind="browser" caption="The app’s side: two amounts the user may set, three fixed facts and one button." />
+  <Shot id="session-sheet" kind="phone" caption="The wallet’s side: the same request as a limits card. Green values are adjustable, “Set by Tidepool” rows are fixed." />
+</Row>
+
+### Redeeming a permission
+
+Each use is one transaction from the user’s account, signed by the app’s session key, whose only call is `redeemDelegations` on the permission manager. The chain checks the row first: its expiry, and that the call goes to the manager. Then the manager checks that the terms the app presents hash to the row’s commitment, enforces them and runs the calls. The account pays if the row allows it, or the app sponsors the fee. A use over budget fails in simulation, so the app sends nothing.
+
+A permission can also carry a rule about results, like Tidepool’s “won’t run if your tpETH balance drops more than 5% in a day”. ERC-7715 has no rule type for this yet, so the wallet defines it and the permission’s policy checks it after each use.
+
+## Remove access from any wallet
+
+Any wallet that opens the account can list every app permission and remove it. Removing one is `revokeActor` on its row, signed by an admin key, and removing all of them is one batch under one signature. A removal signed for every chain lands on every chain. A row also stops working at its expiry. If a wallet doesn’t have the terms, it can still remove the row, but it can’t show what was granted.
+
+<Shot id="app-keys" kind="phone" caption="App-controlled keys: every permission with what is left, each removable on its own." />
+
+## Open points
+
+- **Threshold gas.** A threshold row has to fit under the 100,000 gas validation limit on EIP-8141 together with the Keystore reads. The mockup shows about 5,600 gas for a co-signer check, which is the mockup’s own figure.
+- **Which nonce a permission row uses.** A row without the `NONCE` scope can’t use a sequenced nonce, and EIP-8141 has no nonce-free mode. So a permission row can’t send on 8141 without it.
+- **Daily rules on results.** A POST_TX frame can’t write state, so a per-day rule needs its starting balance stored somewhere else.
+- **Commitment salt.** Two grants with identical terms share a commitment, so a policy that tracks spending per commitment would mix them.
+- **Getting a rule into the transaction.** There is no agreed way yet for an app or a co-signer to add its own check before the user signs.

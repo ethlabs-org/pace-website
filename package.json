@@ -1,0 +1,21 @@
+{
+  "name": "new-ethereum-account-mockup",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Interactive mockup of the New Ethereum Account Standard: a wallet, an app, a hardware wallet and an explorer on one account. Sample data, no chain.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "demo": "python3 serve.py 8791"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.0",
+    "vite": "^6.3.5"
+  }
+}

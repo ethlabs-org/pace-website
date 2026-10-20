@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" class="sketch">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interactive mockup · New Ethereum Account Standard</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&family=IBM+Plex+Mono:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Manrope:wght@400..800&family=Caveat:wght@400..700&display=swap" />
+    <script>
+      // The static server sends no cache headers, so a plain <link> could keep serving an old styles.css after an edit.
+      // A per-load query string makes the browser fetch the current file, matching the no-cache module loader below.
+      // sketch.css draws the mockup as a working drawing (src/Sketch.jsx) over the base styles, so it loads after styles.css.
+      var v = Date.now();
+      document.write('<link rel="stylesheet" href="./src/styles.css?v=' + v + '" />');
+      document.write('<link rel="stylesheet" href="./src/sketch.css?v=' + v + '" />');
+    </script>
+    <!--
+      No-build entry: runs the same src/ files without Node. JSX is compiled in the browser by Babel,
+      modules are resolved by es-module-shims, React comes from esm.sh. Serve this folder over HTTP
+      (for example: python3 -m http.server 8791) and open its root. demo.html forwards here, for old links. For
+      development with Vite, use vite.html.
+    -->
+    <script>
+      window.esmsInitOptions = {
+        shimMode: true,
+        fetch: async function (url, options) {
+          var res = await fetch(url, Object.assign({}, options, { cache: 'no-cache' }));   // revalidate: the static server sends no cache headers
+          if (!res.ok || !/\.jsx(\?.*)?$/.test(url)) return res;
+          var src = await res.text();
+          var out = Babel.transform(src, { filename: url, presets: [['react', { runtime: 'automatic' }]], sourceMaps: 'inline' });
+          return new Response(out.code, { status: 200, headers: { 'Content-Type': 'application/javascript' } });
+        }
+      };
+    </script>
+    <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.10.1/dist/es-module-shims.js"></script>
+    <script type="importmap-shim">
+      { "imports": { "react": "https://esm.sh/react@19", "react/jsx-runtime": "https://esm.sh/react@19/jsx-runtime", "react-dom/client": "https://esm.sh/react-dom@19/client" } }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module-shim" src="./src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,67 @@
+---
+title: Use Ethereum like a banking app
+description: Passkeys, one signature for a whole batch, gas paid by someone else, and payments that don't wait in one line.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+import { Shot } from '../../components/Shot'
+
+# Use Ethereum like a banking app [Passkeys, one signature for a whole batch, gas paid by someone else, and payments that don't wait in one line.]
+
+Ethereum should feel like a banking app. Passkeys, batches, someone else paying the gas and parallel payments all come from EIP-8130, so they work the same in every wallet. Everything on this page is in PACE.
+
+## Passkey signing
+
+A key can be a passkey that lives in the phone’s secure hardware and unlocks with Face ID or a fingerprint. The key never leaves the phone. One account can mix key types, because each row in the Keystore names the contract that checks its signatures. The wallet calls a key “Face ID” where the explorer says “P-256”.
+
+| Key | What checks it | On EIP-8141 |
+|---|---|---|
+| secp256k1, like today’s keys | built in | native, about 2,800 gas |
+| P-256 | `P256Authenticator` | native, about 6,700 gas |
+| passkey (WebAuthn) | `WebAuthnAuthenticator` | a contract |
+| another account | `DelegateAuthenticator` | a contract |
+
+PACE adds two more: the session authenticator for [app permissions](/docs/transaction-security#app-permissions-with-limits) and the [threshold authenticator](/docs/transaction-security#co-signers-and-multisigs) for co-signers and multisigs. Anyone can deploy a new one, like a [post-quantum verifier](/docs/post-quantum), and every wallet reads the row that points at it the same way.
+
+<Shot id="create" kind="phone" caption="Creating an account with Face ID. The key stays in the phone." />
+
+## One signature for the whole batch
+
+Several calls go through under one signature, grouped into phases. Each phase is all or nothing, and a later phase still runs if an earlier one reverted. So an approve, a swap and a deposit can go through as one transaction, and a fee taken in the first phase stays paid even if the swap fails.
+
+| | EIP-8130 | EIP-8141 |
+| --- | --- | --- |
+| A phase | one inner list in `calls` | a group of SENDER frames joined by `ATOMIC_BATCH_FLAG` |
+| A call | `{to, data}` | one SENDER frame |
+| ETH value | always 0 | carried by the frame |
+
+A wallet has to produce the same phases and the same calls on both for the same action. ETH value is the one place they differ, and a portable encoding for a batch that sends ETH isn’t defined yet.
+
+<Shot id="batch-sheet" kind="phone" caption="Approve, swap and deposit as one transaction with one signature." />
+
+## Someone else pays the gas
+
+An app or a sponsor can pay the network fee, so a new account needs no ETH to start. The payer can’t change what it pays for.
+
+- **EIP-8130.** The transaction has a separate `payer`, which signs over the same fields as the sender.
+- **EIP-8141.** A paymaster approves payment in its own VERIFY frame.
+- **ERC-4337.** A paymaster in the user operation.
+
+For an app permission, the user’s account pays if its row allows it, and otherwise the app sponsors the fee. Paying the fee in a token like USDC, with no trusted party in the middle, is still open. It is on [what we need to do](/docs/what-has-to-change#pay-gas-in-tokens-like-usdc).
+
+<Shot id="signin" kind="phone" caption="Signing in to an app that pays the network fee." />
+
+## A stuck payment holds nothing up
+
+Each account has nonce lanes: independent counters, so a payment stuck on a low fee only blocks its own lane. An app session can also send on its own lane without waiting behind the user’s transactions.
+
+| Lane | EIP-8130 | EIP-8141 with EIP-8250 |
+|---|---|---|
+| One line, like today | `nonce_key = 0` | `nonce_keys = [0]` |
+| An independent lane | `nonce_key = k` | `nonce_keys = [k]` |
+| No counter, only a validity window | `nonce_key = NONCE_KEY_MAX` | not available |
+
+A wallet uses the same lane number for the same purpose on every chain. On Ethereum, lanes need EIP-8250 and a mempool rule that admits one pending transaction per lane. Until then, a second transaction waits until the first one lands.
+
+<Shot id="lanes" kind="phone" caption="A stuck payment waits on its own lane while everything else keeps going." />

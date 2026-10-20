@@ -1,0 +1,39 @@
+---
+title: Built from existing standards
+description: What PACE takes from each standard, what it adds, and what it asks of it.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+# Built from existing standards [What PACE takes from each standard, what it adds, and what it asks of it.]
+
+PACE builds on standards that already exist. Where one runs in production, PACE uses it as it is and says what it lacks. Each standard plays one of these roles:
+
+- **In PACE:** EIP-8130 in full, with its Keystore on every chain and a shared threshold authenticator, ERC-7715 and ERC-7710 for app permissions, EIP-7906 assertions from one shared builder, and ERC-7730 clear signing metadata for every operation.
+- **Extended by PACE:** ERC-5792, the API apps already use to talk to wallets.
+- **Transport:** EIP-8141 on Ethereum, EIP-8130 on Base, ERC-4337 elsewhere.
+- **Wallet extensions:** ERC-8211 smart batches and ERC-7964 signatures across chains.
+- **The way out of an EOA:** EIP-7702, then EIP-8298 and EIP-8151.
+
+## Each standard
+
+| Standard | What PACE does with it | Status |
+|---|---|---|
+| **EIP-8130**, Keystore Accounts :badge[In PACE]{success} | Takes all of it unchanged: the Keystore, rows, scopes, policy managers, key-change channels, nonce lanes, the lock and account import. Adds the same rows on EIP-8141, a session authenticator and a threshold authenticator. Asks for a call after all phases, so assertions work on Base. | shipping on Base in the Cobalt upgrade |
+| **EIP-7906**, Transaction Assertions :badge[In PACE]{success} | Takes the POST_TX frame and on-chain enforcement of the result. Adds one shared assertion builder and one assertion contract with a descriptor. Asks every L2 to ship it. | expected for Hegotá, running on a devnet |
+| **ERC-7715** and **ERC-7710**, permissions :badge[In PACE]{success} | Takes the permission request, the permission types and `redeemDelegations`. Adds a permission manager that checks a Keystore hash, and one row per permission. Asks for an optional `session` object in the 7715 response. | in MetaMask on 15 mainnets since April 2026 |
+| **ERC-7730**, Clear Signing :badge[In PACE]{success} | Takes the descriptor format and the open registry at clearsigning.org. Adds clear signing metadata for every PACE operation, and proposes a batch container and formats for assertions and run-time values. | live in Ledger, Trezor and others, run by the EF |
+| **ERC-5792**, Wallet Call API :badge[Extended by PACE]{success} | Takes `wallet_sendCalls`, `wallet_getCallsStatus` and `wallet_getCapabilities`. Adds one extension for phases, nonce lanes, the gas payer, assertions and per-chain account facts. | final, in major wallets |
+| **EIP-8141**, Frame Transaction :badge[Transport]{info} | The transport on Ethereum: frames, APPROVE and native P-256. Asks for a mempool rule to read the Keystore, one for nonce lanes, and small changes for app permissions. | scheduled for Hegotá |
+| **ERC-4337** :badge[Transport]{info} | The transport on other chains. | live |
+| **ERC-8211**, Smart Batching :badge[Wallet extension]{info} | The batch format with fetched values and predicates. Asks both chains to support smart batches natively. | in production in Biconomy Nexus |
+| **ERC-7964**, Crosschain EIP-712 :badge[Wallet extension]{info} | One signature over per-chain operations. Asks canonical authenticators to understand it. | draft, with a testnet demo |
+| **EIP-7702**, **EIP-8298**, **EIP-8151** :badge[EOA path]{info} | Delegate first, adopt code later, then retire the key. PACE documents the sequence and what breaks. | 7702 live, the others drafts |
+
+## Where 8130 and 8141 disagree
+
+The account runs on two transports that disagree about what a node may do while it validates a transaction. EIP-8130 fixes the shape: one storage read and one call to the row’s authenticator. EIP-8141 lets the account run its own code under limits, and a node finds the cost by running it. Most of what PACE asks for comes from that gap: reading the Keystore on Ethereum, assertions on Base, nonce lanes in the Ethereum mempool, and how sponsors and ETH value work on each. [Where 8130 and 8141 disagree](/research/the-split) has every item, what we decided and what is open.
+
+## ERC-8403 and the Keystore read
+
+ERC-8403 is a draft that defines adding, rotating and revoking keys for both designs, with the keys as a Merkle tree. We prefer a plain Keystore read on Ethereum, which needs only the mempool rule in [ethereum/EIPs#12340](https://github.com/ethereum/EIPs/pull/12340): the transaction then carries just a key id and a signature, and a removed key stops working in the next block. ERC-8403 stays useful as a fallback if Ethereum leaves that rule off, and for readers that can’t see the Keystore. [ERC-8403 and the Keystore read](/research/erc-8403) has the comparison.

@@ -1,0 +1,292 @@
+/* =========================================================================
+   Sketch look
+   The mockup drawn as a working drawing, in the landing page's sketch and blueprint style: drafting paper with a
+   faint blue grid, pencil outlines drawn by hand, blue construction guides past the corners of each device, and
+   figure labels with a handwritten note. The tutorial's slides (styles.css, .ti) are drawn on the same paper with the
+   same labels. It tells a visitor the screens are a concept for the standard, not a product that ships.
+
+   It is the mockup's only look. Every rule hangs off html.sketch, a class set in the markup of demo.html and
+   index.html, and draws over the base styles in styles.css. The wobble comes from
+   the SVG filters in Sketch.jsx (SketchDefs). Strokes live on pseudo-elements and on the frame spans, never on text
+   or screen content, so every word stays sharp. Settled things are inked; construction is drawn in blue.
+   Hierarchy is kept by value and by line weight. The drawing board is warm paper; each app's screen has its own
+   tinted ground; cards are white on it. Lines come in three weights: the device frames are the darkest (a fineliner),
+   card outlines are pencil, rules inside a card are faint. The primary action stands off an ink offset like a print
+   out of register, and the one number or title each screen is about gets a highlighter stroke.
+   ========================================================================= */
+
+/* ---- Tokens. ---- */
+:root.sketch {
+  --paper: #FBFAF5;                      /* the drawing board, under the shell only */
+  --ink-line: rgba(20, 23, 28, .82);     /* fineliner: the device frames, the strongest line on the page */
+  --pencil: rgba(20, 23, 28, .58);       /* a card or box outline */
+  --pencil-2: rgba(20, 23, 28, .3);      /* a second stroke, a small ring, a quiet outline */
+  --pencil-soft: rgba(20, 23, 28, .16);  /* a rule */
+  --print: rgba(20, 23, 28, .09);        /* the offset a card or menu stands off, like a misregistered print */
+  --bp: #3A78D0;
+  --bp-ink: #2A62AE;                                           /* blue text: 5.9:1 on the paper */
+  --bp-line: color-mix(in srgb, var(--bp) 45%, transparent);   /* construction lines */
+  --bp-grid: color-mix(in srgb, var(--bp) 1.8%, transparent);  /* the grid, every 24px: barely there */
+  --bp-grid-2: color-mix(in srgb, var(--bp) 3.6%, transparent); /* every fifth line */
+  --bp-over: 14px;                                             /* how far a guide runs past a corner */
+  --hand: 'Caveat', 'Bradley Hand', cursive;
+  --stamp: #E0523F;
+  /* riso grain for tinted and inked grounds: dark specks on a tint, light specks on ink */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .45 0 0 0 -.2'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-on-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .3 0 0 0 -.13'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
+  --stamp-wear: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='w' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.6 0 0 0 2.25'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23w)'/%3E%3C/svg%3E");
+
+  /* the finished look's tokens, redrawn: white cards and the soft greys stay, the rings and drops become pencil */
+  --bg: var(--paper);
+  --hair: rgba(20, 23, 28, .34);
+  --lift: 0 0 0 1.2px var(--hair);
+  --lift-2: 0 0 0 1.2px var(--hair), 3px 3px 0 var(--print);
+  --lift-3: 0 0 0 1.2px var(--hair), 5px 5px 0 var(--print);
+  --acc-2: var(--acc); --acc-hover-hi: var(--acc-hover); --acc-glow: transparent; --ink-hi: var(--ink);
+}
+/* Keel keeps its own greys and lift (styles.css, .scr.k); the lift is redrawn here as well */
+.sketch .scr.k { --hair: rgba(20, 23, 28, .34); --lift: 0 0 0 1.2px var(--hair); }
+/* Each app's screen has its own tinted ground, a shade darker than the finished look's, so the white cards stand on
+   it and the browser and the phone read as two different things: a hint of green for Keel, blue for Tidepool, lilac
+   for Lantern, plain grey for the explorer. The highlighter (--hl) is the app's own colour too. */
+.sketch .scr.k { --ground: #ECF1EE; --hl: color-mix(in srgb, var(--mint-ink) 22%, transparent); }
+.sketch .scr.t { --ground: #EBF0F7; --hl: color-mix(in srgb, var(--t-acc) 17%, transparent); }
+.sketch .scr.f { --ground: #EEF0F2; }
+.sketch .scr.l { --ground: #EFEEF6; }
+.sketch ::selection { background: color-mix(in srgb, var(--mint-ink) 22%, transparent); }
+
+/* The parts that only exist in the sketch look. */
+.sketch-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.skf { display: none; }
+
+/* ---- Drafting paper under the whole page, and under the tutorial's slides (.ti), so the two line up. ---- */
+.sketch body, .sketch .ti {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--bp-grid-2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-grid-2) 1px, transparent 1px),
+    linear-gradient(var(--bp-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-grid) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  background-position: -1px -1px;
+}
+
+/* =========================================================================
+   The shell: the stage and the strip (there is no top bar)
+   ========================================================================= */
+
+/* Segmented controls everywhere: a shaded track, the chosen segment a white tab outlined in pencil that stands off
+   the track. */
+.sketch .seg, .sketch .k .segk, .sketch .t .seg, .sketch .t .tabs, .sketch .f .segbar .tabs { box-shadow: inset 0 0 0 1px var(--pencil-soft); }
+.sketch .seg button.on, .sketch .k .segk button.on, .sketch .t .seg button.on, .sketch .t .tabs .on, .sketch .f .segbar .tb.on { background: var(--card); box-shadow: inset 0 0 0 1.2px var(--pencil), 2px 2px 0 var(--print); }
+
+/* The stage keeps a band over the devices for their labels (Phone.jsx counts this padding in its scale), and the app
+   column a wider gap above the Anchor for its label. */
+.sketch .stage { padding-top: 40px; padding-bottom: 16px; overflow: hidden; }
+.sketch .col-app { gap: 46px; }
+
+/* The tutorial's strip is a ruled band of the drawing: paper, a pencil rule along its top (PencilRule, as on the
+   slides' foot), pencil ticks for the steps (red for the current one), and quiet pencil buttons. */
+.sketch .tour { background: var(--paper); box-shadow: none; }
+.sketch .tr-tick::before { background: var(--pencil-soft); }
+.sketch .tr-tick.done::before { background: var(--pencil); }
+.sketch .tr-tick.on::before { background: var(--note); }
+.sketch .tr-btn { box-shadow: inset 0 0 0 1.2px var(--pencil-2); }
+.sketch .tr-btn:hover:not(:disabled) { background: var(--card); }
+
+/* =========================================================================
+   The frames: the browser, the phone and the Anchor, each drawn in pencil over blue construction guides
+   ========================================================================= */
+.sketch .skf { display: block; position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: var(--skf-r); }
+.skf > i { position: absolute; border-radius: inherit; }
+/* the strokes: an SVG with the wobble already in its points (SketchFrame), so nothing is filtered */
+.skf-svg { position: absolute; left: -6px; top: -6px; overflow: visible; }
+.skf-svg path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.skf-a { stroke: var(--ink-line); stroke-width: 1.6; }
+.skf-b { stroke: var(--pencil-2); stroke-width: 1.2; }
+.skf-s { stroke: var(--pencil); stroke-width: 1.3; }
+/* the guides: one ruled line along each edge, running past the corners and fading out there */
+.skf-g {
+  --g: linear-gradient(var(--bp-line), var(--bp-line));
+  --fade: transparent, #000 var(--bp-over), #000 calc(100% - var(--bp-over)), transparent;
+  inset: calc(-1 * var(--bp-over)); border-radius: 0 !important;
+  background:
+    var(--g) left 0 top var(--bp-over) / 100% 1px no-repeat,
+    var(--g) left 0 bottom var(--bp-over) / 100% 1px no-repeat,
+    var(--g) left var(--bp-over) top 0 / 1px 100% no-repeat,
+    var(--g) right var(--bp-over) top 0 / 1px 100% no-repeat;
+  -webkit-mask: linear-gradient(90deg, var(--fade)), linear-gradient(var(--fade));
+  -webkit-mask-composite: source-in;
+  mask: linear-gradient(90deg, var(--fade)), linear-gradient(var(--fade));
+  mask-composite: intersect;
+}
+/* the centre line, a chain line that shows only where it pokes out above and below the device */
+.skf-x {
+  left: 50%; top: -30px; bottom: -14px; width: 1px; border-radius: 0 !important;
+  background: repeating-linear-gradient(var(--bp-line) 0 12px, transparent 0 16px, var(--bp-line) 0 18px, transparent 0 22px);
+  -webkit-mask: linear-gradient(#000 0 30px, transparent 30px calc(100% - 14px), #000 calc(100% - 14px));
+  mask: linear-gradient(#000 0 30px, transparent 30px calc(100% - 14px), #000 calc(100% - 14px));
+}
+/* the label over the top-left corner: the figure number in a blue balloon, the name inked, a note in hand */
+.skf-cap { position: absolute; left: 2px; bottom: calc(100% + 9px); display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.skf-cap b { align-self: center; padding: 2px 7px 3px; border: 1px solid var(--bp-line); border-radius: 9px; font: 500 9.5px/12px 'IBM Plex Mono', Menlo, monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--bp-ink); }
+.skf-cap span { font-size: 13px; line-height: 16px; font-weight: 700; letter-spacing: -.005em; color: var(--ink); }
+.skf-cap em { font-family: var(--hand); font-style: normal; font-size: 20px; line-height: 16px; font-weight: 500; color: var(--bp-ink); rotate: -2deg; translate: 0 1px; }
+
+/* The browser: the frame's pencil is its edge, so the window itself draws no shadow. It stops clipping so the frame's
+   guides and label can sit outside it; the chrome and the page round their own corners instead. */
+.sketch .browser { position: relative; overflow: visible; box-shadow: none; background: var(--paper); }
+.sketch .browser .chrome { background: transparent; border-radius: 12px 12px 0 0; }
+.sketch .browser .urlbar { background: transparent; box-shadow: inset 0 -1px 0 var(--pencil-soft); }
+.sketch .browser .view { overflow: hidden; border-radius: 0 0 12px 12px; }
+.sketch .browser .chrome .dots span { background: transparent !important; box-shadow: inset 0 0 0 1.2px var(--pencil-2); }
+.sketch .browser .chrome .tab.on { background: transparent; box-shadow: inset 0 0 0 1.2px var(--pencil-2); }
+.sketch .browser .url { background: transparent; box-shadow: 0 0 0 1px var(--pencil-soft); }
+
+/* The phone: paper instead of glass and aluminium. The body between its outline and the screen is hatched, the way
+   a drawing shades solid material; the side keys are solid pencil. */
+.sketch .phoneWrap { position: relative; }
+.sketch .phone {
+  box-shadow: none;
+  background: repeating-linear-gradient(-45deg, rgba(20, 23, 28, .09) 0 1px, transparent 1px 7px), var(--paper);
+}
+.sketch .phone::before { background: var(--pencil-2); box-shadow: 0 54px 0 0 var(--pencil-2), 0 110px 0 0 var(--pencil-2); }
+.sketch .phone::after { background: var(--pencil-2); }
+
+/* The Anchor: the same treatment, with the screen left as it is (black glass is what the device shows). */
+.sketch .hw { background: var(--card); color: var(--ink); box-shadow: 4px 4px 0 var(--print); }
+.sketch .hw::after { background: var(--pencil-2); box-shadow: none; }
+.sketch .hw-name { color: var(--mut); text-shadow: none; }
+.sketch .hw-led { background: transparent; box-shadow: inset 0 0 0 1.2px var(--pencil-2); }
+.sketch .hw.live .hw-led { background: #3FB26B; box-shadow: none; }
+.sketch .hw-toggle { border-color: var(--pencil-2); color: var(--mut); }
+.sketch .hw-toggle:hover { color: var(--ink); border-color: var(--pencil); }
+.sketch .hw-toggle.on { background: var(--peach); border-color: var(--peach-ink); color: var(--peach-ink); }
+.sketch .hw-key { color: var(--ink); }
+.sketch .hw-key .cap { background: var(--card); box-shadow: inset 0 0 0 1.3px var(--pencil); }
+.sketch .hw-key:hover .cap { background: var(--soft); }
+.sketch .hw-key:active .cap { box-shadow: inset 0 0 0 1.3px var(--pencil); }
+.sketch .hw-key small { color: var(--mut); }
+.sketch .hw-key.no .cap { color: #B0433C; }
+.sketch .hw-key.ok .cap { background: var(--mint); color: var(--mint-ink); box-shadow: inset 0 0 0 1.5px var(--mint-ink); }
+.sketch .hw-key.ok:hover .cap { background: #D3EDDD; }
+
+/* =========================================================================
+   Inside the screens
+   ========================================================================= */
+/* Cards: white on the app's ground, a pencil line drawn round the edge (a hair inside it, so a card that clips its
+   content keeps the wobble), and a flat offset under it. */
+.sketch .k .card, .sketch .t .card, .sketch .f .card, .sketch .f .kpi, .sketch .f .segbar, .sketch .l .card, .sketch .k .pcard { position: relative; box-shadow: 3px 3px 0 var(--print); }
+.sketch .tmodal .dlg, .sketch .k .menu, .sketch .k .kmenu { box-shadow: 5px 5px 0 var(--print); }
+.sketch .k .card::before, .sketch .t .card::before, .sketch .f .card::before, .sketch .f .kpi::before, .sketch .f .segbar::before,
+.sketch .l .card::before, .sketch .k .pcard::before, .sketch .tmodal .dlg::before, .sketch .k .menu::before, .sketch .k .kmenu::before {
+  content: ''; position: absolute; inset: 1px; z-index: 2; pointer-events: none;
+  border: 1.25px solid var(--pencil); border-radius: inherit; filter: url(#sk-a);
+}
+.sketch .k .pcard:hover { box-shadow: 5px 5px 0 var(--print); }
+
+/* Buttons: a flat fill with a hand-cut edge, on a pseudo-element so the wobble never touches the label. A primary
+   stands off an ink offset, like a print slightly out of register, so it is the first thing the eye lands on; on
+   hover it lifts a little further. */
+.sketch .k .btn.p, .sketch .k .btn.s, .sketch .k .keyseg, .sketch .t .btn, .sketch .l .btn:not(.t) {
+  position: relative; isolation: isolate; background: transparent !important; box-shadow: none !important;
+  --btn-fill: var(--acc); --btn-line: var(--acc);
+}
+.sketch .k .btn.p::before, .sketch .k .btn.s::before, .sketch .k .keyseg::before, .sketch .t .btn::before, .sketch .l .btn:not(.t)::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  background: var(--btn-fill); border: 1.3px solid var(--btn-line); filter: url(#sk-a);
+}
+.sketch .k .btn.p:not(:disabled)::before, .sketch .k .keyseg::before, .sketch .t .btn:not(.s):not(.wait)::before, .sketch .l .btn:not(.t):not(.s)::before { box-shadow: 3px 3px 0 var(--ink); }
+.sketch .k .btn.p:not(:disabled):hover, .sketch .k .split:has(.btn.main:not(:disabled)):hover .keyseg, .sketch .t .btn:not(.s):not(.wait):hover, .sketch .l .btn:not(.t):not(.s):hover { translate: -1px -1px; }
+.sketch .k .btn.p:not(:disabled):hover::before, .sketch .k .split:has(.btn.main:not(:disabled)):hover .keyseg::before, .sketch .k .split:has(.keyseg:hover) .btn.main::before, .sketch .t .btn:not(.s):not(.wait):hover::before, .sketch .l .btn:not(.t):not(.s):hover::before { box-shadow: 4px 4px 0 var(--ink); }
+.sketch .k .split:has(.keyseg:hover) .btn.main { translate: -1px -1px; }
+.sketch .k .btn.s, .sketch .t .btn.s { --btn-fill: var(--card); --btn-line: var(--pencil); }
+.sketch .k .btn.s:hover, .sketch .t .btn.s:hover { --btn-fill: var(--soft); }
+.sketch .k .btn.s:hover::before, .sketch .t .btn.s:hover::before { box-shadow: none; }
+.sketch .k .btn.p:disabled { --btn-fill: var(--soft-2); --btn-line: var(--pencil-2); }
+.sketch .k .split .btn.main:disabled { --btn-fill: var(--acc); --btn-line: var(--acc); }
+.sketch .k .split .btn.main:disabled::before { box-shadow: 3px 3px 0 var(--ink); }   /* waiting on the simulation, still the primary */
+.sketch .t .btn { --btn-fill: var(--t-acc); --btn-line: var(--t-acc); }
+.sketch .t .btn.wait { --btn-fill: var(--soft); --btn-line: var(--pencil-2); }
+.sketch .l .btn:not(.t), .sketch .l .lz .btn.p, .sketch .l .lz .keyseg { --btn-fill: var(--lilac-ink); --btn-line: var(--lilac-ink); }
+.sketch .l .lz .btn.s { --btn-fill: var(--card); --btn-line: var(--pencil); }
+/* the split button's key segment sits flush against the action, so it keeps a pale seam instead of a hard edge */
+.sketch .k .keyseg { box-shadow: none !important; }
+.sketch .k .keyseg::before { border-left-color: rgba(255, 255, 255, .5); }
+
+/* The round action keys on Home: pencil rings, the first one (Send) inked in green. */
+.sketch .k .quick .qi { position: relative; isolation: isolate; background: transparent; box-shadow: none; }
+.sketch .k .quick .qi::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 50%; border: 1.3px solid var(--pencil); background: var(--card); filter: url(#sk-c); box-shadow: 2px 2px 0 var(--print); }
+.sketch .k .quick button:first-child .qi { background: transparent; box-shadow: none; }
+.sketch .k .quick button:first-child .qi::before { background: var(--acc); border-color: var(--acc); box-shadow: 2.5px 2.5px 0 var(--ink); }
+.sketch .k .quick button:hover .qi, .sketch .k .quick button:first-child:hover .qi { box-shadow: none; }
+.sketch .k .quick button:hover .qi::before { box-shadow: 3px 3px 0 var(--ink); }
+.sketch .k .flip { box-shadow: 0 0 0 1.2px var(--pencil); }
+
+/* The number or title a screen is about gets a highlighter stroke in the app's colour: Keel's balance, Tidepool's
+   page title. */
+.sketch .k .hero .big, .sketch .t .h1 {
+  width: fit-content; padding: 0 .1em; margin-left: -.1em; margin-right: -.1em;
+  background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 84% / 100% .38em;
+}
+
+/* The values in a request sentence are what the user agrees to: a white slip for a plain value, a tint for the
+   amount and the destination, each with an edge so it holds on the tinted ground. */
+.sketch .k .sent .v { background: var(--card); box-shadow: inset 0 0 0 1.2px var(--pencil-2); }
+.sketch .k .sent .v.c { background: var(--mint); box-shadow: inset 0 0 0 1.2px var(--mint-line); }
+.sketch .k .sent .v.a { background: var(--sky); box-shadow: inset 0 0 0 1.2px var(--sky-line); }
+.sketch .l .lz .sent .v.c { box-shadow: inset 0 0 0 1.2px var(--lilac-line); }
+/* "Under the hood" is hidden detail, so it is drawn the way a drawing draws a hidden edge: a dashed line. */
+.sketch .k .details { background: transparent; outline: 1.2px dashed var(--pencil-2); outline-offset: -1.2px; }
+.sketch .k .details.on { background: var(--card); }
+.sketch .k .xbtn { background: var(--card); box-shadow: inset 0 0 0 1.2px var(--pencil-2); }
+
+/* Icon tiles are blobs, and the icons on them are drawn by hand. Tinted ones carry riso grain; on a neutral tile the
+   grain only looks like dirt, so those stay flat. */
+.sketch .k .icn, .sketch .t .step .si:not(.ch), .sketch .f .kt, .sketch .t .cl .ico, .sketch .t .run .ri, .sketch .k .prow .icn {
+  border-radius: 46% 54% 42% 58% / 55% 45% 55% 45%;
+}
+.sketch .k .icn:is(.g, .b, .a, .l), .sketch .t .cl .ico:is(.ok, .no), .sketch .t .run .ri { background-image: var(--grain); }
+.sketch .k .icn > .ic, .sketch .t .step .si > .ic, .sketch .f .kt > .ic, .sketch .k .quick .qi .ic, .sketch .k .tab .ic,
+.sketch .t .links button .ic, .sketch .f .subnav button .ic, .sketch .t .pi .ic { filter: url(#sk-i); }
+/* tinted notes and badges get the grain too */
+.sketch .k .note.g, .sketch .k .note.a, .sketch .k .protnote, .sketch .t .okbox, .sketch .t .notice, .sketch .k .herosub .ok, .sketch .k .status .bigok { background-image: var(--grain); }
+
+/* Inked grounds are flat ink with light grain: the private balance, Lantern's header, Framescan's bar, the toast. */
+.sketch .k .phero { background: var(--ink) var(--grain-on-ink); box-shadow: none; }
+.sketch .k .paddr .pmark { background: var(--ink) var(--grain-on-ink); box-shadow: none; }
+.sketch .l .hd { background: #1F1E38 var(--grain-on-ink); }
+.sketch .f .bar { background-image: var(--grain-on-ink); }
+.sketch .toast { background: var(--ink) var(--grain-on-ink); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.sketch .faceid { background: color-mix(in srgb, var(--ground) 95%, transparent); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.sketch .faceid .ring { background: var(--ink) var(--grain-on-ink); }
+.sketch .faceid .ring.co { background: var(--lilac-ink) var(--grain-on-ink); }
+.sketch .faceid .ring.co.ok { background: var(--mint-ink) var(--grain-on-ink); }
+.sketch .faceid .ring.co.no { background: #B0433C var(--grain-on-ink); }
+.sketch .faceid .ring.hw { background: #15191C var(--grain-on-ink); }
+.sketch .l .faceid .ring { background: var(--lilac-ink) var(--grain-on-ink); }
+
+/* Bars and sheets: paper instead of frosted glass, pencil rules instead of hairlines. */
+.sketch .k .tabs { position: relative; background: color-mix(in srgb, var(--card) 96%, transparent); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+.sketch .k .tabs::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1.2px; background: var(--pencil-2); filter: url(#sk-line); }
+.sketch .sheet .sfoot { background: color-mix(in srgb, var(--card) 96%, transparent); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 -1px 0 var(--pencil-soft); }
+.sketch .sheet::before { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; border: 1.3px solid var(--pencil); border-bottom-color: transparent; border-radius: inherit; filter: url(#sk-a); }
+.sketch .sheet .grab { background: var(--pencil-2); }
+/* What is behind a sheet or a dialog is shaded with dense pencil hatching instead of blurred, so the sheet is the
+   only light thing left. */
+.sketch .sheet-backdrop, .sketch .tmodal {
+  background: repeating-linear-gradient(-45deg, rgba(20, 23, 28, .2) 0 1px, transparent 1px 5px), rgba(20, 23, 28, .12);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.sketch .t .nav, .sketch .f .subnav { box-shadow: 0 1px 0 var(--pencil-soft); }
+.sketch .t .pill { border-color: var(--pencil-2); box-shadow: none; }
+.sketch .t .tok { border-color: var(--pencil-2); box-shadow: none; }
+.sketch .t .steps { box-shadow: inset 0 0 0 1.2px var(--pencil-2); }
+.sketch .k .inp { box-shadow: inset 0 0 0 1.2px var(--pencil-2); }
+.sketch .k .inp:focus { box-shadow: inset 0 0 0 1.5px var(--acc); }
+.sketch .k .sw { background: transparent; box-shadow: inset 0 0 0 1.3px var(--pencil); }
+.sketch .k .sw i { background: var(--card); box-shadow: 0 0 0 1.3px var(--pencil); }
+.sketch .k .sw.on { background: var(--acc); box-shadow: inset 0 0 0 1.3px var(--acc); }
+.sketch .k .sw.on i { box-shadow: 0 0 0 1.3px var(--acc); }
+.sketch .k .acct .avatar, .sketch .t .avatar { box-shadow: 0 0 0 1.2px var(--pencil); }
+.sketch .k .keycard:hover { background: var(--soft); }

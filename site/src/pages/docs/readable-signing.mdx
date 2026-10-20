@@ -1,0 +1,80 @@
+---
+title: Read every transaction on your hardware wallet
+description: Clear signing metadata for every operation and one assertion format, so every wallet and hardware wallet describes the same transaction in the same words.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+import { Shot, Row } from '../../components/Shot'
+
+# Read every transaction on your hardware wallet [Clear signing metadata for every operation and one assertion format, so every wallet and hardware wallet describes the same transaction in the same words.]
+
+A hacked computer or web page can show you one transaction and ask you to sign another, which is how Bybit lost about $1.5 billion in 2025. With PACE the hardware wallet decodes the transaction itself, from the bytes it signs, so a hacked screen can’t fool you. That works because every account and its assertions are encoded the same way everywhere, and because clear signing metadata for every operation is part of PACE.
+
+## Every operation has a descriptor
+
+Every account operation reaches the user as a sentence with labelled fields. Adding a key, giving an app access, running a batch and locking the account are each an ERC-7730 descriptor: one JSON file per contract that says which words and fields to show for each function. PACE requires a wallet to render every account operation, batch and assertion through the descriptors published for the shared contracts.
+
+| Operation | What the user reads in the mockup |
+|---|---|
+| Add a device | Add MacBook Pro (Touch ID). It can send money and pay fees. |
+| Give an app access | Let Tidepool charge your Tidepool Pro subscription for 1 year: up to 49.90 USDC a month. |
+| A multi-step action | Swap 1,000 USDC for ETH, then put everything you receive into ETH Vault. |
+| Keys that work together | Add iPhone + Anchor. Both must approve everything it signs. |
+| Turning protection on | Protect iPhone 16 Pro with Safenet. Safenet verifies every transaction before it counts. It can only say no. |
+
+<Shot id="plain" kind="phone" caption="Plain-language approvals: the descriptor’s intent and labelled fields, the same in every wallet." />
+
+## The same text in every wallet
+
+A user who opens the account in a second wallet sees the same words for the same transaction, because the second wallet uses the same descriptors. They live in the open registry at [clearsigning.org](https://clearsigning.org), which the Ethereum Foundation has run since 12 May 2026 with Ledger, Trezor, WalletConnect, MetaMask and others. The shared contracts have one address on every chain, so one descriptor per contract covers every chain. Being in the registry means the descriptor passed checks, and audits are separate. Ethlabs will publish descriptors for every shared contract.
+
+<Shot id="lantern" kind="phone" caption="A second wallet renders the same batch from the same descriptors." />
+
+## Computed values
+
+Some amounts are only known when the transaction runs, like “everything you receive”. The wallet never shows a guessed number for these. It shows the bound that constrains the value, like “at least 0.312 ETH”, which is exactly what the chain enforces, so the sentence is true by construction. Amounts set at run time come from ERC-8211 smart batches, which are a [wallet extension](/docs/extensions#smart-batches-and-cross-chain).
+
+## On a hardware wallet
+
+In the mockup the device pages through an approval in this order:
+
+1. **What you sign.** Every step of the batch as its descriptor renders it. The wallet’s own rule comes last.
+2. **Transaction assertions.** One line per asset, like “USDC · you −1,000.09 at most”, then “Nothing else changes” and the expiry.
+3. **Approve.** “Either every line shown holds, or the transaction fails and nothing moves.”
+
+The device needs no simulation for this. Every wallet encodes assertions for the [one shared assertion contract](/docs/transaction-security#the-assertion-contract), and its descriptor tells the device how to describe each rule from the parameters it signs.
+
+<Row>
+  <Shot id="hw-steps" kind="hw" caption="The swap step of a batch, rendered from its descriptor." />
+  <Shot id="hw-assertions" kind="hw" caption="The assertions page: each bound the chain enforces." />
+</Row>
+
+### Names from signed descriptors
+
+Token and app names on the device come from descriptors the vendor signed, and never from a label the computer supplies. Without a signed descriptor the device shows the raw call. Ledger renders ERC-7730 on its current devices, and Trezor added it on 7 and 8 September 2026.
+
+### Nothing else changes
+
+The last assertion line is “Nothing else changes”. The lines above it bound what the simulation found: what arrives, what leaves and the fee. This last one fails the transaction on any other change to the account’s tokens, approvals or ETH, so a token the wallet left out can’t move. An account on EIP-8141 can require it on every transaction. EIP-8130 runs nothing after execution, so an account on Base can’t.
+
+### What the device cannot check
+
+- **Only what changed.** Assertions read the transaction’s changes: balances, storage, code and events.
+- **No prices.** There is no rule for a price or for the value of a position, so “my vault position is worth at least X” can’t be asserted.
+- **Tokens without events.** A token that moves balances without a `Transfer` event, or a position kept in another contract’s storage, can change without failing the check.
+- **Weaker on EIP-8130.** On Base an assertion guards only the phase it sits in, and “nothing else changes” can’t be checked. The wallet has to say which guarantee applies on each chain.
+
+### Messages
+
+A message signature, like a sign-in or a limit order, has no assertions, because nothing runs on chain. The device says so: “Not a transaction. Nothing is enforced on chain.” and “Sign only if you trust the app that asked.”
+
+## What ERC-7730 still lacks
+
+Descriptors describe one call at a time. To render everything PACE does, the schema needs a few additions, which Ethlabs will propose to the ERC-7730 working group:
+
+| Addition | What it renders |
+|---|---|
+| A batch container | The steps of one batch as one unit, with the wallet’s rule last |
+| An `assertion` format | The shared assertion contract’s parameters as bounds |
+| A `fetched` field format | A value set at run time as its bound: “at least 0.312 ETH” |

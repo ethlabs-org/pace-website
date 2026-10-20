@@ -1,0 +1,184 @@
+---
+title: How the account works
+description: One address, a list of rows in the Keystore, and the transaction that carries them on each chain.
+# the floating dock is fixed over the content column and covers body text
+showAskAi: false
+---
+
+import { Tab, Tabs } from 'vocs'
+import { Shot, Row } from '../../components/Shot'
+import { Anatomy } from '../../components/Anatomy'
+
+# How the account works [One address, a list of rows in the Keystore, and the transaction that carries them on each chain.]
+
+An account is an address plus a list of rows in the EIP-8130 Keystore. Adding, rotating or removing a key changes the rows, and it never moves funds or changes the address. Every wallet reads the same rows, so every wallet sees the same keys. This page is the reference behind the others.
+
+## Where the Keystore lives
+
+On Base the Keystore is EIP-8130’s system contract, and the protocol reads it while it validates a transaction. On Ethereum and every other EIP-8141 chain, the same Keystore is an ordinary contract at the same address, and the account’s own code reads it. On Ethereum that read needs a mempool rule, proposed in [ethereum/EIPs#12340](https://github.com/ethereum/EIPs/pull/12340), because EIP-8141 lets validation read only the sender’s own storage. Without the rule, each account would mirror its rows into its own storage.
+
+## One row
+
+Each row is what EIP-8130 calls an actor: something allowed to act for the account. It names the authenticator that checks its signatures, an expiry and a scope. A policy row also names the one contract it may call and a hash of the rules that contract enforces.
+
+```text [one Keystore row]
+actorId (32 bytes)            derived from the key by its authenticator
+  authenticator (20 bytes)
+  expiry (6 bytes, 0 = never)
+  scope (2 bytes)
+  policy_manager (20 bytes)   policy rows only
+  policy_commitment (32 bytes)
+```
+
+Every feature is a way of writing rows:
+
+- A hardware wallet is a P-256 row with admin scope.
+- A phone protected by a security service is a [threshold row](/docs/transaction-security#co-signers-and-multisigs): 2 of 2, the passkey and the service’s key.
+- An [app permission](/docs/transaction-security#app-permissions-with-limits) is a row for the app’s session key, limited to the permission manager, with an expiry and a hash of the terms.
+- A [post-quantum key](/docs/post-quantum) is a row with a hash-based authenticator.
+- A key with a [spending limit](/docs/extensions#spending-limits), which is a wallet extension, is a policy row limited to a spend-limit manager.
+
+<Row>
+  <Shot id="keys" kind="phone" caption="The wallet’s Keys screen. Each card is one Keystore row." />
+  <Shot id="framescan-keystore" kind="browser" caption="The same account in the explorer: the rows with their flags and expiry, the nonce lanes and the app permissions." />
+</Row>
+
+## Scopes
+
+A row’s scope says what it may do. The wallet shows it in plain words, and the explorer shows the bits.
+
+| Scope | What the row may do | The mockup’s wording |
+|---|---|---|
+| admin (`0x0000`) | Anything, including changing the rows | Manage devices & access |
+| `OPERATOR` | Send transactions to any target | Send money |
+| `SELF_PAYER` | Pay gas for its own transactions | Pay network fees |
+| `SPONSOR_PAYER` | Pay gas for another account’s transactions | Pay fees for other accounts |
+| `POLICY` | Only call the row’s policy manager | shown as the limit, or “App access” |
+| `NONCE` | Use sequenced nonce lanes | Send several payments at once |
+
+A policy row must not also carry `OPERATOR`, because together they lift the limit. A row with only the payer bits can pay fees and can’t move funds. On EIP-8130 the protocol checks the scope, and on EIP-8141 the account’s own code checks it before it approves the transaction.
+
+## Changing keys
+
+An admin row signs every key change, through the Keystore’s own entry points: `authorizeActor`, `revokeActor`, and `applySignedAccountChanges` for a signed batch that anyone can relay. Each change emits `ActorAuthorized` or `ActorRevoked`, and wallets and explorers rebuild an account’s key list from those events, because the Keystore keeps no list in state.
+
+A row can expire at a set time, after which its transactions fail validation and cost nothing. A wallet can also cancel, in one step, every signed key change for one chain that hasn’t landed yet, by bumping the account’s local epoch.
+
+<Shot id="pick-key" kind="phone" caption="Every approval names the key that signs it. The right half of the button opens the key menu." />
+
+### Key changes on every chain
+
+A user adds or removes a key once, and the change applies on every chain where the account exists. A multichain change is signed with `chain_id = 0` and carries the account’s next multichain counter, and anyone can relay it to each chain. A removal reaches each chain separately, so the old key keeps working on a chain until the change lands there. A signed change could also become valid again if the key returns to an earlier state, which [ethereum/EIPs#12341](https://github.com/ethereum/EIPs/pull/12341) fixes with a per-key counter.
+
+## The account’s life
+
+### Creating an account
+
+A user gets their address the moment they pick a first key, and can receive money before anything is on chain. The Keystore creates accounts with `createAccount(userSalt, code, initialActors)` as a CREATE2, so a wallet can compute the address offline. The first transaction deploys the account. Every shared contract has the same address on every chain, so the account gets one address everywhere, as long as the same code serves all three transports. The draft doesn’t settle that yet.
+
+### Upgrading an EOA
+
+A user who already has an address keeps it, and their existing key becomes a key of the new account. On EIP-8130 an EOA’s own key is already a row. On EIP-8141 the EOA signs an EIP-7702 authorization for the account code. The old key keeps its power until the account adopts real code through EIP-8298 and ecRecover stops honouring it through EIP-8151. After that, permits, recover-only contracts and earlier orders signed with the old key stop working.
+
+### Importing an ERC-4337 account
+
+A 4337 wallet keeps its address and funds and calls `importAccount()` on the Keystore once to get its first rows. Its modules keep working over ERC-4337. To use EIP-8141 it needs a core upgrade, because only the account’s own code can approve a transaction there, so an account that can’t be upgraded stays on ERC-4337.
+
+### Locking the key list
+
+A user can lock the account’s keys. Lifting the lock takes a delay they chose, which gives them time to notice an unlock they didn’t start. EIP-8130 caps that delay at about 18.2 hours.
+
+### Opening the account in another wallet
+
+A user can open the same account in a second wallet without sending a transaction, because every row is already on chain. The second wallet finds the account by looking up one of the user’s keys in the Keystore’s events, rebuilds the list of rows, and renders every approval through the same descriptors as the first wallet.
+
+Two things aren’t on chain. A permission row stores only a hash of its terms, so a wallet without the terms can revoke the permission but can’t show it. A threshold row stores only a hash of its members, so a wallet needs the member list before it can sign.
+
+<Row>
+  <Shot id="lantern" kind="phone" caption="Lantern, a second wallet, showing a batch from the imported account in the same words as Keel." />
+  <Shot id="networks" kind="phone" caption="One address on every network. The wallet handles the transport." />
+</Row>
+
+## A transaction, step by step
+
+One payment, swap or app action, from the moment the wallet builds it to the moment the chain accepts the result.
+
+<Anatomy phases={[
+  {
+    label: 'In the wallet',
+    note: 'Nothing is on chain yet. This is the part the user sees and the part a hardware wallet has to be able to read.',
+    tint: 'mint',
+    steps: [
+      { title: 'The wallet builds it', body: 'One payment, or a batch: approve, swap, deposit.', tag: 'batch' },
+      { title: 'It gets simulated', body: 'The wallet runs it against current state and reads everything that would change.', tag: 'simulation' },
+      { title: 'The result becomes a rule', body: 'What changes is written as assertions the chain enforces afterwards: spend at most this, receive at least that, nothing else of mine changes.', tag: 'EIP-7906 assertions' },
+      { title: 'It is shown in words', body: 'The hardware wallet renders every call and every assertion from the bytes it is about to sign.', tag: 'ERC-7730 descriptors' },
+      { title: 'The key signs', body: 'A passkey, a hardware wallet or a phrase. One signature covers the calls and the assertions.', tag: 'the row’s key' },
+      { title: 'The co-signer agrees', body: 'If the key is protected, a security service checks the transaction and adds its signature, or refuses.', tag: 'threshold row, if protected' },
+    ],
+  },
+  {
+    label: 'On chain',
+    note: 'One transaction from the user’s own address, through the public mempool, with no relayer in the middle.',
+    tint: 'sky',
+    steps: [
+      { title: 'The chain checks the window and the key', body: 'The Keystore says which row signed, what it may do and whether it has expired.', tag: 'expiry and VERIFY frames' },
+      { title: 'The fee is settled', body: 'The account pays, or an app or paymaster sponsors it.', tag: 'paying frame' },
+      { title: 'The calls run', body: 'Each call is its own frame, in order.', tag: 'SENDER frames' },
+      { title: 'The result is checked', body: 'The chain compares what changed against the assertions from step 3. If one is false, it reverts all of it.', tag: 'POST_TX frame' },
+    ],
+  },
+]} />
+
+The same account sends a different transaction type on each chain:
+
+<Tabs stateKey="transport">
+  <Tab title="EIP-8141 on Ethereum">
+```text [8141 frame transaction]
+[chain_id, nonce, sender, frames, signatures, fees, blob_versioned_hashes]
+frames = [
+  [VERIFY,  flags, EXPIRY_VERIFIER, limits, 0,     data],   // the validity window, always frame 0
+  [VERIFY,  flags, sender,          limits, 0,     data],   // checks the Keystore row, then APPROVE
+  [VERIFY,  flags, paymaster,       limits, 0,     data],   // optional: a paymaster approves payment
+  [SENDER,  flags, target,          limits, value, data],   // the calls, grouped into phases
+  [POST_TX, flags, ASSERTIONS,      limits, 0,     data],   // EIP-7906: check the result
+]
+```
+  </Tab>
+  <Tab title="EIP-8130 on Base">
+```text [8130 transaction, RLP fields in order]
+[chain_id, sender, nonce_key, nonce_sequence, valid_after, valid_before,
+ max_priority_fee_per_gas, max_fee_per_gas, gas_limit,
+ account_changes,   // create, change rows or delegate, in the same tx
+ calls,             // phases: [[call, call], [call]], each atomic
+ metadata,
+ payer,             // may differ from the sender
+ sender_auth,       // authenticator ‖ data
+ payer_auth]
+```
+  </Tab>
+  <Tab title="ERC-4337 elsewhere">
+```text [4337 user operation, sent to a bundler]
+UserOperation {
+  sender, nonce, factory, factoryData,
+  callData,                         // execute(...) with the phases inside
+  callGasLimit, verificationGasLimit, preVerificationGas,
+  maxFeePerGas, maxPriorityFeePerGas,
+  paymaster, paymasterData,
+  signature                         // authenticator ‖ data
+}
+```
+  </Tab>
+</Tabs>
+
+## What differs by transport
+
+Most of the account works the same on every chain, and some guarantees depend on the transport. The wallet has to tell the user when a guarantee is weaker on the current chain, and it reports these facts per chain in `wallet_getCapabilities` so apps know too.
+
+| | EIP-8141 on Ethereum | EIP-8130 on Base | ERC-4337 elsewhere |
+|---|---|---|---|
+| **How a key is checked** | the account’s code reads the Keystore | the protocol reads the row | `validateUserOp` reads the Keystore |
+| **Assertions** | after the transaction, on everything that changed | per phase, on listed values only | not defined |
+| **Nonce lanes** | once the mempool rule exists | built in | not defined |
+| **Sponsor** | a paymaster | a named payer | a 4337 paymaster |
+| **Private funding** | possible | not possible | through a bundler |
